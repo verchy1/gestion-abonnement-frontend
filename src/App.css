@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+/* Custom helpers & animations */
+:root {
+	--card-radius: 1rem;
+}
+
+.animate-fadeIn {
+	animation: fadeIn 240ms ease-out both;
+}
+
+.animate-slideUp {
+	animation: slideUp 280ms cubic-bezier(.2,.9,.3,1) both;
+}
+
+@keyframes fadeIn {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+@keyframes slideUp {
+	from { transform: translateY(8px); opacity: 0; }
+	to { transform: translateY(0); opacity: 1; }
+}
+
+/* Utility to improve input appearance in dark themes */
+input, select, textarea {
+	transition: box-shadow .18s ease, transform .12s ease;
+}
+
+/* Subtle focus ring */
+input:focus, select:focus, textarea:focus, button:focus {
+	outline: none;
+	box-shadow: 0 0 0 4px rgba(99,102,241,0.08);
+}
+
+/* Make card corners consistent */
+.card-rounded { border-radius: var(--card-radius); }

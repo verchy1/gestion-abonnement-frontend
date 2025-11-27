@@ -1,0 +1,1519 @@
+import { useState, useEffect } from 'react';
+import { TrendingUp, DollarSign, LogOut, Menu, X, Users } from 'lucide-react';
+import './App.css';
+
+// Imports des types
+import { API_URL, Abonnement, Utilisateur, Vendeur, CartePrepayee, Stats } from './types';
+
+// Imports des composants
+import PageConnexion from './components/PageConnexion';
+import DashboardContent from './components/DashboardContent';
+import AbonnementsContent from './components/AbonnementsContent';
+import UtilisateursContent from './components/UtilisateursContent';
+import VendeursContent from './components/VendeursContent';
+import CartesContent from './components/CartesContent';
+import Modal from './components/Modal';
+import FormulaireAbonnement from './components/FormulaireAbonnement';
+import FormulaireUtilisateur from './components/FormulaireUtilisateur';
+import FormulaireCarte from './components/FormulaireCarte';
+import FormulaireLiaisonCarte from './components/FormulaireLiaisonCarte';
+
+const App = () => {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [showModal, setShowModal] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // États pour les données
+  const [abonnements, setAbonnements] = useState([]);
+  const [utilisateurs, setUtilisateurs] = useState([]);
+  const [vendeurs, setVendeurs] = useState([]);
+  const [cartes, setCartes] = useState<CartePrepayee[]>([]);
+  const [selectedCardForLink, setSelectedCardForLink] = useState<string | null>(null);
+  const [stats, setStats] = useState({
+    totalUtilisateurs: 0,
+    totalAbonnements: 0,
+    revenusMois: 0,
+    commissionsTotal: 0,
+    paiementsEnAttente: 0
+  });
+
+  // Vérifier si l'utilisateur est déjà connecté
+  useEffect(() => {
+    const savedToken = localStorage.getItem('token');
+    if (savedToken) {
+      setToken(savedToken);
+      setIsLoggedIn(true);
+    }
+  }, []);
+
+  // Charger les données quand l'utilisateur est connecté
+  useEffect(() => {
+    if (isLoggedIn && token) {
+      const loadData = async () => {
+        try {
+          const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          };
+          const [abonRes, utilRes, vendRes, statsRes, cartesRes] = await Promise.all([
+            fetch(`${API_URL}/abonnements`, { headers }),
+            fetch(`${API_URL}/utilisateurs`, { headers }),
+            fetch(`${API_URL}/vendeurs`, { headers }),
+            fetch(`${API_URL}/stats`, { headers }),
+            fetch(`${API_URL}/cartes`, { headers })
+          ]);
+
+          if (abonRes.ok) setAbonnements(await abonRes.json());
+          if (utilRes.ok) setUtilisateurs(await utilRes.json());
+          if (vendRes.ok) setVendeurs(await vendRes.json());
+          if (statsRes.ok) setStats(await statsRes.json());
+          if (cartesRes && cartesRes.ok) setCartes(await cartesRes.json());
+        } catch (error) {
+          console.error('Erreur chargement données:', error);
+        }
+      };
+      loadData();
+    }
+  }, [isLoggedIn, token]);
+
+  // Headers pour les requêtes API
+  const getHeaders = () => ({
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  });
+
+  // Charger les abonnements
+  const chargerAbonnements = async () => {
+    try {
+      const response = await fetch(`${API_URL}/abonnements`, {
+        headers: getHeaders()
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setAbonnements(data);
+      }
+    } catch (error) {
+      console.error('Erreur chargement abonnements:', error);
+    }
+  };
+
+  // Charger les utilisateurs
+  const chargerUtilisateurs = async () => {
+    try {
+      const response = await fetch(`${API_URL}/utilisateurs`, {
+        headers: getHeaders()
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setUtilisateurs(data);
+      }
+    } catch (error) {
+      console.error('Erreur chargement utilisateurs:', error);
+    }
+  };
+
+  // Charger les statistiques
+  const chargerStats = async () => {
+    try {
+      const response = await fetch(`${API_URL}/stats`, {
+        headers: getHeaders()
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setStats(data);
+      }
+    } catch (error) {
+      console.error('Erreur chargement stats:', error);
+    }
+  };
+
+    // Charger les cartes prépayées
+    const chargerCartes = async () => {
+      try {
+        const response = await fetch(`${API_URL}/cartes`, { headers: getHeaders() });
+        if (response.ok) {
+          const data = await response.json();
+          setCartes(data);
+        }
+      } catch (error) {
+        console.error('Erreur chargement cartes:', error);
+      }
+    };
+
+  // Ajouter un abonnement
+  const ajouterAbonnement = async (data: Record<string, unknown>) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/abonnements`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        await chargerAbonnements();
+        await chargerStats();
+        setShowModal(null);
+      } else {
+        alert('Erreur lors de l\'ajout de l\'abonnement');
+      }
+    } catch (error) {
+      console.error('Erreur ajout abonnement:', error);
+      alert('Erreur de connexion au serveur');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Ajouter un utilisateur
+  const ajouterUtilisateur = async (data: Record<string, unknown>) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/utilisateurs`, {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        await chargerUtilisateurs();
+        await chargerAbonnements();
+        await chargerStats();
+        setShowModal(null);
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Erreur lors de l\'ajout de l\'utilisateur');
+      }
+    } catch (error) {
+      console.error('Erreur ajout utilisateur:', error);
+      alert('Erreur de connexion au serveur');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Toggle paiement utilisateur
+  const togglePaiement = async (id: string, payeActuel: boolean) => {
+    try {
+      const response = await fetch(`${API_URL}/utilisateurs/${id}/paiement`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify({ paye: !payeActuel })
+      });
+
+      if (response.ok) {
+        await chargerUtilisateurs();
+        await chargerStats();
+      }
+    } catch (error) {
+      console.error('Erreur toggle paiement:', error);
+    }
+  };
+
+  // Supprimer un item
+  const supprimerItem = async (type: string, id: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) return;
+
+    try {
+      setLoading(true);
+      const endpoint = type === 'abonnement' ? 'abonnements' : 'utilisateurs';
+      const response = await fetch(`${API_URL}/${endpoint}/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+
+      if (response.ok) {
+        if (type === 'abonnement') {
+          await chargerAbonnements();
+        } else {
+          await chargerUtilisateurs();
+          await chargerAbonnements();
+        }
+        await chargerStats();
+      }
+    } catch (error) {
+      console.error('Erreur suppression:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Supprimer une carte prépayée
+  const supprimerCarte = async (id: string) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette carte ?')) return;
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/cartes/${id}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+      if (response.ok) {
+        await chargerCartes();
+      }
+    } catch (error) {
+      console.error('Erreur suppression carte:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Déconnexion
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('admin');
+    setToken(null);
+    setIsLoggedIn(false);
+    setAbonnements([]);
+    setUtilisateurs([]);
+    setVendeurs([]);
+  };
+
+  // Formater les dates
+  const formatDate = (date: string) => {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('fr-FR');
+  };
+
+  // Si pas connecté, afficher la page de connexion
+  if (!isLoggedIn) {
+    return <PageConnexion setIsLoggedIn={setIsLoggedIn} setToken={setToken} />;
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* HEADER MODERNE */}
+      <header className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 shadow-xl">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-4">
+            {/* Logo et titre */}
+            <div className="flex items-center space-x-4">
+              <div className="bg-white p-3 rounded-2xl shadow-lg transform transition-transform duration-200 hover:scale-105">
+                <DollarSign className="text-indigo-600" size={30} />
+              </div>
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">SubsManager</h1>
+                <p className="text-xs text-indigo-100 hidden sm:block">Gestion d'Abonnements</p>
+              </div>
+            </div>
+
+            {/* Actions desktop */}
+            <div className="hidden md:flex items-center space-x-4">
+              <div className="text-right">
+                <p className="text-sm text-white font-medium">Admin</p>
+                <p className="text-xs text-indigo-100">En ligne</p>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-4 py-2 rounded-lg transition duration-200"
+              >
+                <LogOut size={18} />
+                <span>Déconnexion</span>
+              </button>
+            </div>
+
+            {/* Menu mobile */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden text-white p-2"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+
+          {/* Menu mobile dropdown */}
+          {mobileMenuOpen && (
+            <div className="md:hidden pb-4">
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center justify-center space-x-2 bg-white/20 text-white px-4 py-2 rounded-lg"
+              >
+                <LogOut size={18} />
+                <span>Déconnexion</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* NAVIGATION MODERNE */}
+      <nav className="bg-white shadow-md sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex space-x-2 overflow-x-auto scrollbar-hide">
+            {[
+              { id: 'dashboard', label: 'Tableau de bord', icon: TrendingUp },
+              { id: 'abonnements', label: 'Abonnements', icon: DollarSign },
+              { id: 'utilisateurs', label: 'Utilisateurs', icon: Users },
+              { id: 'vendeurs', label: 'Vendeurs', icon: Users },
+              { id: 'cartes', label: "Cartes prépayées", icon: DollarSign }
+            ].map(tab => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    setActiveTab(tab.id);
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`flex items-center space-x-2 px-4 py-3 rounded-lg font-medium whitespace-nowrap transition-all duration-200 ${
+                    activeTab === tab.id
+                      ? 'bg-white text-indigo-700 shadow-md'
+                      : 'text-gray-600 hover:text-indigo-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon size={18} />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </nav>
+
+      {/* CONTENU PRINCIPAL */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* DASHBOARD */}
+        {activeTab === 'dashboard' && (
+          <DashboardContent 
+            stats={stats} 
+            abonnements={abonnements}
+          />
+        )}
+
+        {/* ABONNEMENTS */}
+        {activeTab === 'abonnements' && (
+          <AbonnementsContent
+            abonnements={abonnements}
+            setShowModal={setShowModal}
+            supprimerItem={supprimerItem}
+            loading={loading}
+          />
+        )}
+
+        {/* UTILISATEURS */}
+        {activeTab === 'utilisateurs' && (
+          <UtilisateursContent
+            utilisateurs={utilisateurs}
+            setShowModal={setShowModal}
+            togglePaiement={togglePaiement}
+            supprimerItem={supprimerItem}
+            loading={loading}
+            formatDate={formatDate}
+          />
+        )}
+
+        {/* VENDEURS */}
+        {activeTab === 'vendeurs' && (
+          <VendeursContent vendeurs={vendeurs} />
+        )}
+        {/* CARTES PRÉPAYÉES */}
+        {activeTab === 'cartes' && (
+          <CartesContent
+            cartes={cartes}
+            setShowModal={setShowModal}
+            supprimerCarte={supprimerCarte}
+            loading={loading}
+            onLinkClick={(id: string) => { setSelectedCardForLink(id); setShowModal('link'); }}
+          />
+        )}
+      </main>
+
+      {/* MODALS */}
+      {showModal === 'abonnement' && (
+        <Modal title="Ajouter un Abonnement" onClose={() => setShowModal(null)}>
+          <FormulaireAbonnement
+            ajouterAbonnement={ajouterAbonnement}
+            vendeurs={vendeurs}
+            loading={loading}
+          />
+        </Modal>
+      )}
+      {showModal === 'utilisateur' && (
+        <Modal title="Ajouter un Utilisateur" onClose={() => setShowModal(null)}>
+          <FormulaireUtilisateur
+            ajouterUtilisateur={ajouterUtilisateur}
+            abonnements={abonnements}
+            loading={loading}
+          />
+        </Modal>
+      )}
+      {showModal === 'carte' && (
+        <Modal title="Ajouter une Carte prépayée" onClose={() => setShowModal(null)}>
+          <FormulaireCarte
+            ajouterCarte={async (data: Record<string, unknown>) => {
+              try {
+                setLoading(true);
+                const response = await fetch(`${API_URL}/cartes`, {
+                  method: 'POST',
+                  headers: getHeaders(),
+                  body: JSON.stringify(data)
+                });
+                if (response.ok) {
+                  await chargerCartes();
+                  setShowModal(null);
+                } else {
+                  const err = await response.json();
+                  alert(err.message || 'Erreur création carte');
+                }
+              } catch (error) {
+                console.error('Erreur ajout carte:', error);
+                alert('Erreur de connexion au serveur');
+              } finally {
+                setLoading(false);
+              }
+            }}
+            loading={loading}
+          />
+        </Modal>
+      )}
+      {showModal === 'link' && selectedCardForLink && (
+        <Modal title="Lier une carte à un abonnement" onClose={() => { setShowModal(null); setSelectedCardForLink(null); }}>
+          <FormulaireLiaisonCarte
+            cardId={selectedCardForLink}
+            abonnements={abonnements}
+            loading={loading}
+            onSuccess={async () => { await chargerCartes(); setShowModal(null); setSelectedCardForLink(null); }}
+          />
+        </Modal>
+      )}
+    </div>
+  );
+};
+
+export default App;
+  const [identifiant, setIdentifiant] = useState('');
+  const [motDePasse, setMotDePasse] = useState('');
+  const [erreur, setErreur] = useState('');
+  const [chargement, setChargement] = useState(false);
+
+  const handleLogin = async () => {
+    if (!identifiant || !motDePasse) {
+      setErreur('Veuillez remplir tous les champs');
+      return;
+    }
+
+    try {
+      setChargement(true);
+      setErreur('');
+
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ identifiant, motDePasse })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        localStorage.setItem('token', data.token);
+        localStorage.setItem('admin', JSON.stringify(data.admin));
+        setToken(data.token);
+        setIsLoggedIn(true);
+      } else {
+        setErreur(data.message || 'Identifiant ou mot de passe incorrect');
+      }
+    } catch (error) {
+      console.error('Erreur connexion:', error);
+      setErreur('Erreur de connexion au serveur');
+    } finally {
+      setChargement(false);
+    }
+  };
+
+  return (
+  <div className="min-h-screen w-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
+  <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden text-gray-900">
+        {/* Header avec gradient */}
+        <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-8 text-center">
+          <div className="bg-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <DollarSign className="text-indigo-600" size={40} />
+          </div>
+          <h1 className="text-3xl font-bold text-white mb-2">Connexion Admin</h1>
+          <p className="text-indigo-100">SubsManager Pro</p>
+        </div>
+
+        {/* Formulaire */}
+        <div className="p-8">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-gray-700 text-sm font-semibold mb-2">
+                Identifiant
+              </label>
+              <input
+                type="text"
+                placeholder="Votre identifiant"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition duration-200 text-gray-900"
+                value={identifiant}
+                onChange={(e) => setIdentifiant(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+              />
+            </div>
+
+            <div>
+              <label className="block text-gray-700 text-sm font-semibold mb-2">
+                Mot de passe
+              </label>
+              <input
+                type="password"
+                placeholder="Votre mot de passe"
+                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition duration-200 text-gray-900"
+                value={motDePasse}
+                onChange={(e) => setMotDePasse(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+              />
+            </div>
+
+            {erreur && (
+              <div className="bg-red-50 border-l-4 border-red-500 text-red-700 px-4 py-3 rounded-lg flex items-center animate-shake">
+                <AlertCircle size={20} className="mr-2 flex-shrink-0" />
+                <span className="text-sm">{erreur}</span>
+              </div>
+            )}
+
+            <button
+              onClick={handleLogin}
+              disabled={chargement}
+              className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {chargement ? 'Connexion...' : 'Se connecter'}
+            </button>
+          </div>
+
+          <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+            <p className="text-xs text-blue-800 text-center">
+              💡 <strong>Serveur:</strong> Assurez-vous que le backend est actif sur le port 5000
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// COMPOSANT: DASHBOARD
+// ============================================
+const DashboardContent = ({ stats, abonnements }: { stats: Stats; abonnements: Abonnement[] }) => {
+  const statsCards = [
+    {
+      title: 'Utilisateurs Actifs',
+      value: stats.totalUtilisateurs,
+      icon: Users,
+      color: 'from-blue-500 to-blue-600',
+      bgColor: 'bg-blue-50',
+      textColor: 'text-blue-600'
+    },
+    {
+      title: 'Revenus du Mois',
+      value: `${stats.revenusMois.toLocaleString()} FCFA`,
+      icon: DollarSign,
+      color: 'from-green-500 to-green-600',
+      bgColor: 'bg-green-50',
+      textColor: 'text-green-600'
+    },
+    {
+      title: 'Commissions',
+      value: `${stats.commissionsTotal.toLocaleString()} FCFA`,
+      icon: TrendingUp,
+      color: 'from-purple-500 to-purple-600',
+      bgColor: 'bg-purple-50',
+      textColor: 'text-purple-600'
+    },
+    {
+      title: 'Paiements en Attente',
+      value: stats.paiementsEnAttente,
+      icon: AlertCircle,
+      color: 'from-red-500 to-red-600',
+      bgColor: 'bg-red-50',
+      textColor: 'text-red-600'
+    }
+  ];
+
+  return (
+    <div className="space-y-6">
+      {/* Cards statistiques */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statsCards.map((stat, index) => {
+          const Icon = stat.icon;
+          return (
+            <div
+              key={index}
+              className="bg-white card-rounded shadow-lg transition-transform duration-300 overflow-hidden transform hover:-translate-y-2 hover:shadow-2xl"
+            >
+              <div className={`h-2 bg-gradient-to-r ${stat.color}`}></div>
+              <div className="p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`p-3 rounded-xl ${stat.bgColor}`}>
+                    <Icon className={stat.textColor} size={24} />
+                  </div>
+                </div>
+                <p className="text-gray-500 text-sm font-medium mb-1">{stat.title}</p>
+                <p className="text-2xl font-bold text-gray-800">{stat.value}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Alertes */}
+      {stats.paiementsEnAttente > 0 && (
+        <div className="bg-gradient-to-r from-yellow-50 to-orange-50 border-l-4 border-yellow-400 p-6 rounded-xl shadow-md">
+          <div className="flex items-start">
+            <AlertCircle className="text-yellow-500 mr-4 flex-shrink-0" size={24} />
+            <div>
+              <p className="font-bold text-gray-800 mb-2">⚠️ Alertes Importantes</p>
+              <p className="text-sm text-gray-700 mb-1">
+                • {stats.paiementsEnAttente} paiement(s) en attente de validation
+              </p>
+              <p className="text-sm text-gray-700">
+                • {abonnements.filter(a => a.utilises >= a.slots - 1).length} compte(s) presque saturé(s)
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Activités récentes */}
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <h3 className="text-xl font-bold text-gray-800 mb-4">📊 Aperçu Rapide</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl">
+            <p className="text-sm text-gray-600 mb-1">Total Abonnements</p>
+            <p className="text-3xl font-bold text-indigo-600">{stats.totalAbonnements}</p>
+          </div>
+          <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl">
+            <p className="text-sm text-gray-600 mb-1">Taux d'occupation</p>
+            <p className="text-3xl font-bold text-green-600">
+              {abonnements.length > 0
+                ? Math.round(
+                    (abonnements.reduce((acc, a) => acc + a.utilises, 0) /
+                      abonnements.reduce((acc, a) => acc + a.slots, 0)) *
+                      100
+                  )
+                : 0}
+              %
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// COMPOSANT: ABONNEMENTS
+// ============================================
+const AbonnementsContent = ({ abonnements, setShowModal, supprimerItem, loading }: { abonnements: Abonnement[]; setShowModal: (value: string | null) => void; supprimerItem: (type: string, id: string) => Promise<void>; loading: boolean }) => {
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-800">Abonnements</h2>
+          <p className="text-gray-500 mt-1">Gérez vos services d'abonnement</p>
+        </div>
+        <button
+          onClick={() => setShowModal('abonnement')}
+          className="flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-purple-700 transition duration-200 shadow-lg"
+        >
+          <Plus size={20} />
+          <span>Nouveau</span>
+        </button>
+      </div>
+
+      {/* Liste des abonnements */}
+      {abonnements.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+          <DollarSign className="mx-auto text-gray-300 mb-4" size={64} />
+          <p className="text-gray-500 text-lg">Aucun abonnement pour le moment</p>
+          <p className="text-gray-400 text-sm mt-2">Cliquez sur "Nouveau" pour ajouter un abonnement</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {abonnements.map(abo => (
+            <div
+              key={abo._id}
+              className="bg-white card-rounded shadow-lg transition-transform duration-300 overflow-hidden transform hover:-translate-y-2 hover:shadow-2xl"
+            >
+              {/* Header coloré */}
+              <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-4">
+                <h3 className="text-xl font-bold text-white">{abo.service}</h3>
+                <p className="text-indigo-100 text-sm">{abo.proprio}</p>
+              </div>
+
+              {/* Contenu */}
+              <div className="p-6 space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Prix:</span>
+                  <span className="text-2xl font-bold text-gray-800">{abo.prix.toLocaleString()} <span className="text-sm text-gray-500">FCFA</span></span>
+                </div>
+
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">Places:</span>
+                  <span className={`text-xl font-bold ${abo.utilises >= abo.slots ? 'text-red-600' : 'text-green-600'}`}>
+                    {abo.utilises}/{abo.slots}
+                  </span>
+                </div>
+
+                {/* Barre de progression */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Occupation</span>
+                    <span>{Math.round((abo.utilises / abo.slots) * 100)}%</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        abo.utilises >= abo.slots
+                          ? 'bg-red-500'
+                          : abo.utilises >= abo.slots * 0.8
+                          ? 'bg-yellow-500'
+                          : 'bg-green-500'
+                      }`}
+                      style={{ width: `${(abo.utilises / abo.slots) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => supprimerItem('abonnement', abo._id)}
+                  disabled={loading}
+                  className="w-full flex items-center justify-center space-x-2 text-red-600 hover:bg-red-50 py-2 rounded-lg transition duration-200 disabled:opacity-50"
+                >
+                  <Trash2 size={18} />
+                  <span>Supprimer</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================
+// COMPOSANT: UTILISATEURS
+// ============================================
+const UtilisateursContent = ({ utilisateurs, setShowModal, togglePaiement, supprimerItem, loading, formatDate }: { utilisateurs: Utilisateur[]; setShowModal: (value: string | null) => void; togglePaiement: (id: string, payeActuel: boolean) => Promise<void>; supprimerItem: (type: string, id: string) => Promise<void>; loading: boolean; formatDate: (date: string) => string }) => {
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-800">Utilisateurs</h2>
+          <p className="text-gray-500 mt-1">Gérez vos clients et leurs abonnements</p>
+        </div>
+        <button
+          onClick={() => setShowModal('utilisateur')}
+          className="flex items-center space-x-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl hover:from-green-600 hover:to-emerald-700 transition duration-200 shadow-lg"
+        >
+          <Plus size={20} />
+          <span>Nouveau Client</span>
+        </button>
+      </div>
+
+      {/* Liste des utilisateurs */}
+      {utilisateurs.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+          <Users className="mx-auto text-gray-300 mb-4" size={64} />
+          <p className="text-gray-500 text-lg">Aucun utilisateur pour le moment</p>
+          <p className="text-gray-400 text-sm mt-2">Ajoutez votre premier client</p>
+        </div>
+      ) : (
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          {/* Version Desktop */}
+          <div className="hidden lg:block overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Client</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Service</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Téléphone</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Expiration</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Montant</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Statut</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {utilisateurs.map(user => (
+                  <tr key={user._id} className="hover:bg-gray-50 transition duration-150">
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center">
+                        <div className="h-10 w-10 flex-shrink-0">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold">
+                            {user.nom.charAt(0).toUpperCase()}
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <div className="text-sm font-medium text-gray-900">{user.nom}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="inline-flex px-3 py-1 text-xs font-semibold rounded-full bg-indigo-100 text-indigo-800">
+                        {user.abonnementId?.service || 'N/A'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {user.telephone}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
+                      {formatDate(user.dateFin)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className="text-sm font-semibold text-gray-900">
+                        {user.montant.toLocaleString()} <span className="text-gray-500 text-xs">FCFA</span>
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <button
+                        onClick={() => togglePaiement(user._id, user.paye)}
+                        className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full transition duration-200 ${
+                          user.paye
+                            ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                            : 'bg-red-100 text-red-800 hover:bg-red-200'
+                        }`}
+                      >
+                        {user.paye ? '✓ Payé' : '✗ Non payé'}
+                      </button>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <button
+                        onClick={() => supprimerItem('utilisateur', user._id)}
+                        disabled={loading}
+                        className="text-red-600 hover:text-red-800 transition duration-150 disabled:opacity-50"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Version Mobile */}
+          <div className="lg:hidden divide-y divide-gray-200">
+            {utilisateurs.map(user => (
+              <div key={user._id} className="p-4 hover:bg-gray-50">
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-center">
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
+                      {user.nom.charAt(0).toUpperCase()}
+                    </div>
+                    <div className="ml-3">
+                      <p className="font-semibold text-gray-900">{user.nom}</p>
+                      <p className="text-sm text-gray-500">{user.telephone}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => supprimerItem('utilisateur', user._id)}
+                    disabled={loading}
+                    className="text-red-600"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </div>
+                
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Service:</span>
+                    <span className="font-medium text-gray-900">{user.abonnementId?.service || 'N/A'}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Expiration:</span>
+                    <span className="font-medium text-gray-900">{formatDate(user.dateFin)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Montant:</span>
+                    <span className="font-bold text-gray-900">{user.montant.toLocaleString()} FCFA</span>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => togglePaiement(user._id, user.paye)}
+                  className={`w-full mt-3 px-4 py-2 text-sm font-semibold rounded-lg transition duration-200 ${
+                    user.paye
+                      ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                      : 'bg-red-100 text-red-800 hover:bg-red-200'
+                  }`}
+                >
+                  {user.paye ? '✓ Payé' : '✗ Marquer comme payé'}
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================
+// COMPOSANT: VENDEURS
+// ============================================
+const VendeursContent = ({ vendeurs }: { vendeurs: Vendeur[] }) => {
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div>
+        <h2 className="text-3xl font-bold text-gray-800">Vendeurs Partenaires</h2>
+        <p className="text-gray-500 mt-1">Gérez vos partenaires et leurs commissions</p>
+      </div>
+
+      {/* Liste des vendeurs */}
+      {vendeurs.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+          <Users className="mx-auto text-gray-300 mb-4" size={64} />
+          <p className="text-gray-500 text-lg">Aucun vendeur partenaire</p>
+          <p className="text-gray-400 text-sm mt-2">Les vendeurs apparaîtront ici</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {vendeurs.map(vendeur => (
+            <div
+              key={vendeur._id}
+              className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden"
+            >
+              {/* Header avec gradient */}
+              <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-6 text-center">
+                <div className="w-20 h-20 mx-auto bg-white rounded-full flex items-center justify-center mb-3 shadow-lg">
+                  <span className="text-3xl font-bold text-purple-600">
+                    {vendeur.nom.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <h3 className="text-xl font-bold text-white">{vendeur.nom}</h3>
+              </div>
+
+              {/* Contenu */}
+              <div className="p-6 space-y-4">
+                <div className="space-y-2">
+                  <div className="flex items-center text-gray-600">
+                    <span className="text-sm">📞</span>
+                    <span className="ml-2 text-sm">{vendeur.telephone}</span>
+                  </div>
+                  {vendeur.email && (
+                    <div className="flex items-center text-gray-600">
+                      <span className="text-sm">✉️</span>
+                      <span className="ml-2 text-sm">{vendeur.email}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-4 border-t border-gray-200">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-gray-600">Commission par vente</span>
+                    <span className="text-lg font-bold text-purple-600">
+                      {vendeur.commission.toLocaleString()} FCFA
+                    </span>
+                  </div>
+                </div>
+
+                <div className={`px-3 py-2 rounded-lg text-center text-sm font-semibold ${
+                  vendeur.actif
+                    ? 'bg-green-100 text-green-800'
+                    : 'bg-gray-100 text-gray-800'
+                }`}>
+                  {vendeur.actif ? '✓ Actif' : '✗ Inactif'}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================
+// COMPOSANT: CARTES PRÉPAYÉES
+// ============================================
+const CartesContent = ({ cartes, setShowModal, supprimerCarte, loading, onLinkClick }: { cartes: CartePrepayee[]; setShowModal: (value: string | null) => void; supprimerCarte: (id: string) => Promise<void>; loading: boolean; onLinkClick: (id: string) => void }) => {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-800">Cartes prépayées</h2>
+          <p className="text-gray-500 mt-1">Gérez les cartes qui paient les abonnements</p>
+        </div>
+        <button
+          onClick={() => setShowModal('carte')}
+          className="flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-3 rounded-xl"
+        >
+          <Plus size={18} />
+          <span>Ajouter Carte</span>
+        </button>
+      </div>
+
+      {cartes.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+          <DollarSign className="mx-auto text-gray-300 mb-4" size={64} />
+          <p className="text-gray-500 text-lg">Aucune carte prépayée</p>
+          <p className="text-gray-400 text-sm mt-2">Ajoutez une carte pour commencer</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {cartes.map(c => (
+            <div key={c._id} className="bg-white card-rounded shadow-lg p-6 transition-transform duration-300 transform hover:-translate-y-2 hover:shadow-2xl">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm text-gray-500">Code</p>
+                  <p className="text-lg font-semibold text-gray-900">{c.code}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-gray-500">Solde</p>
+                  <p className="text-lg font-bold text-indigo-600">{c.solde.toLocaleString()} FCFA</p>
+                </div>
+              </div>
+
+              {c.abonnements && c.abonnements.length > 0 && (
+                <div className="mb-4">
+                  <p className="text-sm text-gray-500 mb-2">Abonnements liés</p>
+                  <ul className="text-sm text-gray-700 space-y-1">
+                    {c.abonnements.map((a, idx) => (
+                      <li key={idx} className="flex justify-between">
+                        <span>{a.service}</span>
+                        <span className="text-gray-500">{new Date(a.dateFin).toLocaleDateString()}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => onLinkClick(c._id)}
+                  disabled={loading}
+                  className="flex-1 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 py-2 rounded-lg disabled:opacity-50"
+                >
+                  Lier abonnement
+                </button>
+                <button
+                  onClick={() => supprimerCarte(c._id)}
+                  disabled={loading}
+                  className="flex-1 text-red-600 hover:bg-red-50 py-2 rounded-lg disabled:opacity-50"
+                >
+                  <Trash2 size={16} /> Supprimer
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+// ============================================
+// COMPOSANT: FORMULAIRE CARTE
+// ============================================
+const FormulaireCarte = ({ ajouterCarte, loading }: { ajouterCarte: (data: Record<string, unknown>) => Promise<void>; loading: boolean }) => {
+  const [form, setForm] = useState<{ code: string; solde: number | string }>({ code: '', solde: '' });
+
+  const handleSubmit = () => {
+    if (form.code && form.solde !== '') {
+      ajouterCarte({ code: form.code, solde: Number(form.solde) });
+    } else {
+      alert('Veuillez remplir tous les champs');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Code de la carte</label>
+        <input type="text" className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} />
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Solde (FCFA)</label>
+        <input type="number" className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" value={form.solde} onChange={(e) => setForm({ ...form, solde: e.target.value === '' ? '' : Number(e.target.value) })} />
+      </div>
+
+      <button onClick={handleSubmit} disabled={loading} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold">
+        {loading ? 'En cours...' : 'Ajouter la carte'}
+      </button>
+    </div>
+  );
+};
+
+// ============================================
+// COMPOSANT: FORMULAIRE LIAISON CARTE -> ABONNEMENT
+// ============================================
+const FormulaireLiaisonCarte = ({ cardId, abonnements, loading, onSuccess }: { cardId: string; abonnements: Abonnement[]; loading: boolean; onSuccess: () => void }) => {
+  const [abonnementId, setAbonnementId] = useState<string>(abonnements.length > 0 ? abonnements[0]._id : '');
+  const [dateFin, setDateFin] = useState<string>(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 30);
+    return d.toISOString().split('T')[0];
+  });
+
+  const handleSubmit = async () => {
+    if (!cardId) return;
+    if (!abonnementId) return alert('Choisissez un abonnement');
+
+    const selected = abonnements.find(a => a._id === abonnementId);
+    if (!selected) return alert('Abonnement invalide');
+
+    try {
+      // use token from localStorage
+      const token = localStorage.getItem('token');
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (token) headers['Authorization'] = `Bearer ${token}`;
+
+      const response = await fetch(`${API_URL}/cartes/${cardId}/abonnements`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ service: selected.service, dateFin })
+      });
+      if (response.ok) {
+        onSuccess();
+      } else {
+        const err = await response.json();
+        alert(err.message || 'Erreur liaison carte');
+      }
+    } catch (error) {
+      console.error('Erreur liaison carte:', error);
+      alert('Erreur de connexion au serveur');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Choisir un abonnement</label>
+        <select className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" value={abonnementId} onChange={(e) => setAbonnementId(e.target.value)}>
+          <option value="">-- Choisir --</option>
+          {abonnements.map(a => (
+            <option key={a._id} value={a._id}>{a.service} — {a.prix} FCFA</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">Date de fin</label>
+        <input type="date" className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
+      </div>
+
+      <button onClick={handleSubmit} disabled={loading} className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold">
+        Lier la carte
+      </button>
+    </div>
+  );
+};
+
+// ============================================
+// COMPOSANT: MODAL
+// ============================================
+const Modal = ({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) => (
+  // Use a lighter overlay so the page beneath remains visible (avoids full black background)
+  <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto animate-slideUp">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6 rounded-t-2xl">
+        <div className="flex justify-between items-center">
+          <h3 className="text-xl font-bold text-white">{title}</h3>
+          <button
+            onClick={onClose}
+            className="text-white hover:bg-white/20 rounded-full p-2 transition duration-200"
+          >
+            <X size={20} />
+          </button>
+        </div>
+      </div>
+      
+      {/* Contenu */}
+      <div className="p-6">
+        {children}
+      </div>
+    </div>
+  </div>
+);
+
+// ============================================
+// COMPOSANT: FORMULAIRE ABONNEMENT
+// ============================================
+const FormulaireAbonnement = ({ ajouterAbonnement, vendeurs, loading }: { ajouterAbonnement: (data: Record<string, unknown>) => Promise<void>; vendeurs: Vendeur[]; loading: boolean }) => {
+  const [form, setForm] = useState<{
+    service: string;
+    prix: number | string;
+    slots: number | string;
+    proprio: string;
+    vendeurId: string;
+  }>({
+    service: 'Netflix',
+    prix: '',
+    slots: '',
+    proprio: 'Moi',
+    vendeurId: ''
+  });
+
+  const handleSubmit = () => {
+    if (form.service && form.prix && form.slots) {
+      const data: Record<string, unknown> = { ...form };
+      if (form.proprio === 'Moi') {
+        delete data['vendeurId'];
+      }
+      ajouterAbonnement(data);
+    } else {
+      alert('Veuillez remplir tous les champs');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Service d'abonnement
+        </label>
+        <select
+          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition duration-200"
+          value={form.service}
+          onChange={(e) => setForm({ ...form, service: e.target.value })}
+        >
+          <option value="Netflix">Netflix</option>
+          <option value="Apple Music">Apple Music</option>
+          <option value="Prime Video">Prime Video</option>
+          <option value="Spotify">Spotify</option>
+          <option value="Disney+">Disney+</option>
+          <option value="YouTube Premium">YouTube Premium</option>
+          <option value="Autre">Autre</option>
+        </select>
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Prix par utilisateur (FCFA)
+        </label>
+        <input
+          type="number"
+          placeholder="Ex: 1800"
+          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition duration-200"
+          value={form.prix}
+          onChange={(e) => setForm({ ...form, prix: parseInt(e.target.value) || '' })}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Nombre de places disponibles
+        </label>
+        <input
+          type="number"
+          placeholder="Ex: 4"
+          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition duration-200"
+          value={form.slots}
+          onChange={(e) => setForm({ ...form, slots: parseInt(e.target.value) || '' })}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Propriétaire
+        </label>
+        <select
+          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition duration-200"
+          value={form.proprio}
+          onChange={(e) => setForm({ ...form, proprio: e.target.value })}
+        >
+          <option value="Moi">Mon compte</option>
+          <option value="Vendeur">Vendeur partenaire</option>
+        </select>
+      </div>
+
+      {form.proprio === 'Vendeur' && vendeurs.length > 0 && (
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Sélectionner le vendeur
+          </label>
+          <select
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition duration-200"
+            value={form.vendeurId}
+            onChange={(e) => setForm({ ...form, vendeurId: e.target.value })}
+          >
+            <option value="">Choisir un vendeur</option>
+            {vendeurs.map(v => (
+              <option key={v._id} value={v._id}>{v.nom}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      <button
+        onClick={handleSubmit}
+        disabled={loading}
+        className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-purple-700 transition duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {loading ? 'Ajout en cours...' : '✓ Ajouter l\'abonnement'}
+      </button>
+    </div>
+  );
+};
+
+// ============================================
+// COMPOSANT: FORMULAIRE UTILISATEUR
+// ============================================
+const FormulaireUtilisateur = ({ ajouterUtilisateur, abonnements, loading }: { ajouterUtilisateur: (data: Record<string, unknown>) => Promise<void>; abonnements: Abonnement[]; loading: boolean }) => {
+  const [form, setForm] = useState<{
+    nom: string;
+    telephone: string;
+    email: string;
+    abonnementId: string;
+    dateDebut: string;
+    dateFin: string;
+    paye: boolean;
+    montant: number | string;
+    methodePaiement: string;
+  }>({
+    nom: '',
+    telephone: '',
+    email: '',
+    abonnementId: '',
+    dateDebut: '',
+    dateFin: '',
+    paye: false,
+    montant: '',
+    methodePaiement: 'Mobile Money'
+  });
+
+  const handleSubmit = () => {
+    if (form.nom && form.telephone && form.abonnementId && form.dateDebut && form.dateFin && form.montant) {
+      ajouterUtilisateur(form);
+    } else {
+      alert('Veuillez remplir tous les champs obligatoires');
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Nom complet <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="text"
+          placeholder="Ex: Jean Dupont"
+          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition duration-200"
+          value={form.nom}
+          onChange={(e) => setForm({ ...form, nom: e.target.value })}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Téléphone <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="tel"
+          placeholder="Ex: +242 06 123 45 67"
+          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition duration-200"
+          value={form.telephone}
+          onChange={(e) => setForm({ ...form, telephone: e.target.value })}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Email (optionnel)
+        </label>
+        <input
+          type="email"
+          placeholder="exemple@email.com"
+          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition duration-200"
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Service <span className="text-red-500">*</span>
+        </label>
+        <select
+          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition duration-200"
+          value={form.abonnementId}
+          onChange={(e) => setForm({ ...form, abonnementId: e.target.value })}
+        >
+          <option value="">Choisir un service</option>
+          {abonnements.map(a => (
+            <option key={a._id} value={a._id}>
+              {a.service} ({a.utilises}/{a.slots} places)
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Date début <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition duration-200"
+            value={form.dateDebut}
+            onChange={(e) => setForm({ ...form, dateDebut: e.target.value })}
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Date fin <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="date"
+            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition duration-200"
+            value={form.dateFin}
+            onChange={(e) => setForm({ ...form, dateFin: e.target.value })}
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Montant (FCFA) <span className="text-red-500">*</span>
+        </label>
+        <input
+          type="number"
+          placeholder="Ex: 1800"
+          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition duration-200"
+          value={form.montant}
+          onChange={(e) => setForm({ ...form, montant: parseInt(e.target.value) || '' })}
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-semibold text-gray-700 mb-2">
+          Méthode de paiement
+        </label>
+        <select
+          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 transition duration-200"
+          value={form.methodePaiement}
+          onChange={(e) => setForm({ ...form, methodePaiement: e.target.value })}
+        >
+          <option value="Mobile Money">Mobile Money</option>
+          <option value="Cash">Cash</option>
+          <option value="Virement">Virement</option>
+          <option value="Autre">Autre</option>
+        </select>
+      </div>
+
+      <button
+        onClick={handleSubmit}
+        disabled={loading}
+        className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {loading ? 'Ajout en cours...' : '✓ Ajouter le client'}
+      </button>
+    </div>
+  );
+};
+
+export default App;
