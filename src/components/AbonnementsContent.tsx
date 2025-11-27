@@ -144,7 +144,7 @@ const AbonnementsContent: FC<Props> = ({
                   </div>
 
                   <div className="relative flex justify-between items-start">
-                    <h3 className="text-xl font-bold tracking-wide">{a.emailService}</h3>
+                    <h3 className="text-xl font-bold tracking-wide">{a.service}</h3>
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-bold border ${
                         percent >= 90
