@@ -3,7 +3,7 @@ import type { Abonnement } from '../types';
 import { API_URL } from '../types';
 
 const FormulaireLiaisonCarte = ({ cardId, abonnements, loading, onSuccess }: { cardId: string; abonnements: Abonnement[]; loading: boolean; onSuccess: () => void }) => {
-    const [abonnementId, setAbonnementId] = useState<string>(abonnements.length > 0 ? abonnements[0]._id : '');
+    const [abonnementId, setAbonnementId] = useState<string>('');
     const [dateFin, setDateFin] = useState<string>(() => {
         const d = new Date();
         d.setDate(d.getDate() + 30);
@@ -18,6 +18,7 @@ const FormulaireLiaisonCarte = ({ cardId, abonnements, loading, onSuccess }: { c
 
         const selected = abonnements.find(a => a._id === abonnementId);
         if (!selected) return alert('Abonnement invalide');
+        
 
         try {
             const token = localStorage.getItem('token');
@@ -27,7 +28,7 @@ const FormulaireLiaisonCarte = ({ cardId, abonnements, loading, onSuccess }: { c
             const response = await fetch(`${API_URL}/cartes/${cardId}/abonnements`, {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ service: selected.service, dateFin })
+                body: JSON.stringify({ abonnementId, dateFin })
             });
             if (response.ok) {
                 onSuccess();
@@ -53,7 +54,7 @@ const FormulaireLiaisonCarte = ({ cardId, abonnements, loading, onSuccess }: { c
                         </option>
                     ))}
                 </select>
-                
+
                 {/* Affichage email du service sélectionné */}
                 {selectedAbonnement?.emailService && (
                     <p className="mt-2 text-sm text-gray-600">

@@ -44,6 +44,7 @@ const CartesContent: FC<Props> = ({
       await supprimerAbonnementCarte(carteId, abonnementIndex);
     }
   };
+  
 
   return (
     <div className="space-y-6">
@@ -57,7 +58,7 @@ const CartesContent: FC<Props> = ({
 
           <button
             onClick={() => setShowModal('carte')}
-            className="flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
+            className="flex items-center space-x-2 bg-linear-to-r from-indigo-600 to-indigo-700 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
             aria-label="Ajouter une carte"
           >
             <Plus size={20} strokeWidth={2.5} />
@@ -134,7 +135,7 @@ const CartesContent: FC<Props> = ({
                 className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-indigo-200"
               >
                 {/* Card Header - Style carte bancaire */}
-                <div className="relative bg-gradient-to-br from-slate-800 via-slate-700 to-slate-900 p-6 overflow-hidden">
+                <div className="relative bg-linear-to-br from-slate-800 via-slate-700 to-slate-900 p-6 overflow-hidden">
                   {/* Pattern background */}
                   <div className="absolute inset-0 opacity-10 pointer-events-none">
                     <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full -mr-20 -mt-20"></div>
@@ -166,7 +167,7 @@ const CartesContent: FC<Props> = ({
                 {/* Card Body */}
                 <div className="p-5 space-y-4">
                   {/* Solde avec bouton modifier */}
-                  <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl p-4">
+                  <div className="bg-linear-to-br from-slate-50 to-slate-100 rounded-xl p-4">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <p className="text-xs text-gray-500 font-medium mb-1">Solde disponible</p>
