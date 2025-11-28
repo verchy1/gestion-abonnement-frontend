@@ -43,6 +43,12 @@ const CartesContent: FC<Props> = ({
     const cartesActives = cartes.filter(c => c.abonnements && c.abonnements.length > 0).length;
     const totalAbonnementsLies = cartes.reduce((acc, c) => acc + (c.abonnements?.length || 0), 0);
 
+    const totalFournisseur = cartes.reduce((acc, c) => {
+        if (!c.abonnements) return acc;
+        return acc + c.abonnements.reduce((sum, abo) => sum + (abo.prixFournisseur || 0), 0);
+    }, 0);
+
+
     const handleEditSolde = async (cardId: string, currentSolde: number) => {
         const nouveauSolde = prompt(`Entrez le nouveau solde (actuel: ${currentSolde} FCFA):`, String(currentSolde));
         if (nouveauSolde !== null && !isNaN(Number(nouveauSolde))) {
@@ -107,6 +113,15 @@ const CartesContent: FC<Props> = ({
                                 <p className="text-lg font-bold text-gray-900">{totalAbonnementsLies}</p>
                             </div>
                         </div>
+                        <div className="flex items-center space-x-3">
+                            <div className="p-2 bg-red-50 rounded-lg">
+                                <TrendingUp className="text-red-600" size={20} />
+                            </div>
+                            <div>
+                                <p className="text-xs text-gray-500 font-medium">Coût fournisseur / mois</p>
+                                <p className="text-lg font-bold text-gray-900">{totalFournisseur.toLocaleString()} FCFA</p>
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
@@ -158,8 +173,8 @@ const CartesContent: FC<Props> = ({
                                             <CreditCard className="text-white/90" size={32} strokeWidth={1.5} />
                                             <div
                                                 className={`px-3 py-1 rounded-full text-xs font-bold ${hasAbonnements
-                                                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
-                                                        : 'bg-gray-500/20 text-gray-300 border border-gray-400/30'
+                                                    ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-400/30'
+                                                    : 'bg-gray-500/20 text-gray-300 border border-gray-400/30'
                                                     }`}
                                                 aria-hidden
                                             >
@@ -231,6 +246,9 @@ const CartesContent: FC<Props> = ({
                                                                     <span className="whitespace-nowrap">{safeDate(a.dateFin)}</span>
                                                                     <span className="ml-2 text-indigo-600 font-medium">{joursRestants(a.dateFin)}</span>
                                                                 </div>
+                                                                <p className="text-sm text-gray-500">
+                                                                    Prix fournisseur : <span className="font-semibold">{a.prixFournisseur} FCFA</span>
+                                                                </p>
                                                             </div>
                                                             <button
                                                                 onClick={() => handleDeleteAbonnement(cardKey as string, idx, a.service)}
@@ -241,7 +259,9 @@ const CartesContent: FC<Props> = ({
                                                             >
                                                                 <X size={16} />
                                                             </button>
+
                                                         </div>
+
                                                     );
                                                 })}
                                             </div>

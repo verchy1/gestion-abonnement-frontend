@@ -8,6 +8,7 @@ export interface Abonnement {
   proprio: string;
   vendeurId?: string;
   emailService?: string;
+  prixFournisseur?: number;
 }
 
 export interface Utilisateur {
@@ -34,7 +35,7 @@ export interface CartePrepayee {
   _id: string;
   code: string;
   solde: number;
-  abonnements?: { service: string; dateFin: string; emailService?: string }[];
+  abonnements?: { service: string; dateFin: string; emailService?: string; prixFournisseur?: number }[];
 }
 
 export interface Stats {

@@ -4,6 +4,8 @@ import { API_URL } from '../types';
 
 const FormulaireLiaisonCarte = ({ cardId, abonnements, loading, onSuccess }: { cardId: string; abonnements: Abonnement[]; loading: boolean; onSuccess: () => void }) => {
     const [abonnementId, setAbonnementId] = useState<string>('');
+    const [prixFournisseur, setPrixFournisseur] = useState<number | ''>('');
+
     const [dateFin, setDateFin] = useState<string>(() => {
         const d = new Date();
         d.setDate(d.getDate() + 30);
@@ -18,7 +20,7 @@ const FormulaireLiaisonCarte = ({ cardId, abonnements, loading, onSuccess }: { c
 
         const selected = abonnements.find(a => a._id === abonnementId);
         if (!selected) return alert('Abonnement invalide');
-        
+
 
         try {
             const token = localStorage.getItem('token');
@@ -28,7 +30,11 @@ const FormulaireLiaisonCarte = ({ cardId, abonnements, loading, onSuccess }: { c
             const response = await fetch(`${API_URL}/cartes/${cardId}/abonnements`, {
                 method: 'POST',
                 headers,
-                body: JSON.stringify({ abonnementId, dateFin })
+                body: JSON.stringify({
+                    abonnementId,
+                    dateFin,
+                    prixFournisseur
+                })
             });
             if (response.ok) {
                 onSuccess();
@@ -68,6 +74,20 @@ const FormulaireLiaisonCarte = ({ cardId, abonnements, loading, onSuccess }: { c
                 <label className="block text-sm font-semibold text-gray-700 mb-2">Date de fin</label>
                 <input type="date" className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
             </div>
+
+            <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Prix fournisseur (FCFA)
+                </label>
+                <input
+                    type="number"
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl"
+                    value={prixFournisseur}
+                    onChange={(e) => setPrixFournisseur(Number(e.target.value))}
+                    placeholder="Ex: 1200"
+                />
+            </div>
+
 
             <button onClick={handleSubmit} disabled={loading} className="w-full bg-linear-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold">
                 Lier la carte
