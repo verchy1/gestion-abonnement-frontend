@@ -265,6 +265,55 @@ const App = () => {
     }
   };
 
+  // 🆕 NOUVELLE FONCTION : Modifier le solde d'une carte
+  const modifierSoldeCarte = async (id: string, nouveauSolde: number) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/cartes/${id}/solde`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify({ solde: nouveauSolde })
+      });
+
+      if (response.ok) {
+        await chargerCartes();
+        alert('Solde mis à jour avec succès');
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Erreur lors de la modification du solde');
+      }
+    } catch (error) {
+      console.error('Erreur modification solde carte:', error);
+      alert('Erreur de connexion au serveur');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🆕 NOUVELLE FONCTION : Supprimer un abonnement d'une carte
+  const supprimerAbonnementCarte = async (carteId: string, abonnementIndex: number) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/cartes/${carteId}/abonnements/${abonnementIndex}`, {
+        method: 'DELETE',
+        headers: getHeaders()
+      });
+
+      if (response.ok) {
+        await chargerCartes();
+        alert('Abonnement supprimé avec succès');
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Erreur lors de la suppression de l\'abonnement');
+      }
+    } catch (error) {
+      console.error('Erreur suppression abonnement carte:', error);
+      alert('Erreur de connexion au serveur');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Déconnexion
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -440,12 +489,14 @@ const App = () => {
             <VendeursContent vendeurs={vendeurs} />
           )}
 
-          {/* CARTES PRÉPAYÉES */}
+          {/* CARTES PRÉPAYÉES - 🆕 AVEC LES NOUVELLES PROPS */}
           {activeTab === 'cartes' && (
             <CartesContent
               cartes={cartes}
               setShowModal={setShowModal}
               supprimerCarte={supprimerCarte}
+              modifierSoldeCarte={modifierSoldeCarte}
+              supprimerAbonnementCarte={supprimerAbonnementCarte}
               loading={loading}
               onLinkClick={(id: string) => { setSelectedCardForLink(id); setShowModal('link'); }}
             />

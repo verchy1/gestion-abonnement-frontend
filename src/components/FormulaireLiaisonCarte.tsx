@@ -3,66 +3,76 @@ import type { Abonnement } from '../types';
 import { API_URL } from '../types';
 
 const FormulaireLiaisonCarte = ({ cardId, abonnements, loading, onSuccess }: { cardId: string; abonnements: Abonnement[]; loading: boolean; onSuccess: () => void }) => {
-  const [abonnementId, setAbonnementId] = useState<string>(abonnements.length > 0 ? abonnements[0]._id : '');
-  const [dateFin, setDateFin] = useState<string>(() => {
-    const d = new Date();
-    d.setDate(d.getDate() + 30);
-    return d.toISOString().split('T')[0];
-  });
+    const [abonnementId, setAbonnementId] = useState<string>(abonnements.length > 0 ? abonnements[0]._id : '');
+    const [dateFin, setDateFin] = useState<string>(() => {
+        const d = new Date();
+        d.setDate(d.getDate() + 30);
+        return d.toISOString().split('T')[0];
+    });
 
-  const handleSubmit = async () => {
-    if (!cardId) return;
-    if (!abonnementId) return alert('Choisissez un abonnement');
+    const selectedAbonnement = abonnements.find(a => a._id === abonnementId);
 
-    const selected = abonnements.find(a => a._id === abonnementId);
-    if (!selected) return alert('Abonnement invalide');
+    const handleSubmit = async () => {
+        if (!cardId) return;
+        if (!abonnementId) return alert('Choisissez un abonnement');
 
-    try {
-      const token = localStorage.getItem('token');
-      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (token) headers['Authorization'] = `Bearer ${token}`;
+        const selected = abonnements.find(a => a._id === abonnementId);
+        if (!selected) return alert('Abonnement invalide');
 
-      const response = await fetch(`${API_URL}/cartes/${cardId}/abonnements`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({ service: selected.service, dateFin })
-      });
-      if (response.ok) {
-        onSuccess();
-      } else {
-        const err = await response.json();
-        alert(err.message || 'Erreur liaison carte');
-      }
-    } catch (error) {
-      console.error('Erreur liaison carte:', error);
-      alert('Erreur de connexion au serveur');
-    }
-  };
+        try {
+            const token = localStorage.getItem('token');
+            const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+            if (token) headers['Authorization'] = `Bearer ${token}`;
 
-  return (
-    <div className="space-y-4">
-      <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-2">Choisir un abonnement</label>
-        <select className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" value={abonnementId} onChange={(e) => setAbonnementId(e.target.value)}>
-          <option value="">-- Choisir --</option>
-          {abonnements.map(a => (
-            <option key={a._id} value={a._id}>
-              {a.service} — {a.prix} FCFA
-            </option>
-          ))}
-        </select>
-      </div>
+            const response = await fetch(`${API_URL}/cartes/${cardId}/abonnements`, {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({ service: selected.service, dateFin })
+            });
+            if (response.ok) {
+                onSuccess();
+            } else {
+                const err = await response.json();
+                alert(err.message || 'Erreur liaison carte');
+            }
+        } catch (error) {
+            console.error('Erreur liaison carte:', error);
+            alert('Erreur de connexion au serveur');
+        }
+    };
 
-      <div>
-        <label className="block text-sm font-semibold text-gray-700 mb-2">Date de fin</label>
-        <input type="date" className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
-      </div>
+    return (
+        <div className="space-y-4">
+            <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Choisir un abonnement</label>
+                <select className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" value={abonnementId} onChange={(e) => setAbonnementId(e.target.value)}>
+                    <option value="">-- Choisir --</option>
+                    {abonnements.map(a => (
+                        <option key={a._id} value={a._id}>
+                            {a.service} — {a.prix} FCFA
+                        </option>
+                    ))}
+                </select>
+                
+                {/* Affichage email du service sélectionné */}
+                {selectedAbonnement?.emailService && (
+                    <p className="mt-2 text-sm text-gray-600">
+                        📧 Email du service :{' '}
+                        <span className="font-medium text-gray-900">{selectedAbonnement.emailService}</span>
+                    </p>
+                )}
+            </div>
 
-      <button onClick={handleSubmit} disabled={loading} className="w-full bg-linear-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold">
-        Lier la carte
-      </button>
-    </div>
-  );
+            <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Date de fin</label>
+                <input type="date" className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
+            </div>
+
+            <button onClick={handleSubmit} disabled={loading} className="w-full bg-linear-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold">
+                Lier la carte
+            </button>
+        </div>
+    );
 };
 
 export default FormulaireLiaisonCarte;
