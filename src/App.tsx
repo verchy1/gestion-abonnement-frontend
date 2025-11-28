@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, DollarSign, LogOut, Menu, X, Users, Sparkles } from 'lucide-react';
+import { TrendingUp, DollarSign, LogOut, Menu, X, Users, Sparkles, RefreshCcw } from 'lucide-react';
 import './App.css';
 
 // Imports des types
@@ -41,6 +41,24 @@ const App = () => {
     commissionsTotal: 0,
     paiementsEnAttente: 0
   });
+
+  const refreshData = async () => {
+    if (!token) return;
+    setIsLoadingData(true);
+    try {
+      await Promise.all([
+        chargerAbonnements(),
+        chargerUtilisateurs(),
+        chargerStats(),
+        chargerCartes()
+      ]);
+    } catch (error) {
+      console.error('Erreur actualisation des données :', error);
+    } finally {
+      setIsLoadingData(false);
+    }
+  };
+
 
   // Vérifier si l'utilisateur est déjà connecté
   useEffect(() => {
@@ -342,7 +360,7 @@ const App = () => {
       <header className="bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 shadow-2xl relative overflow-hidden">
         {/* Effet de brillance animé */}
         <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
-        
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="flex justify-between items-center py-5">
             {/* Logo et titre avec animation */}
@@ -382,6 +400,13 @@ const App = () => {
                 <LogOut size={18} className="group-hover:rotate-12 transition-transform" />
                 <span className="font-semibold">Déconnexion</span>
               </button>
+              <button
+                onClick={refreshData}
+                className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-4 py-2 rounded-xl transition-all duration-200"
+              >
+                <RefreshCcw size={18} />
+              </button>
+
             </div>
 
             {/* Menu mobile amélioré */}
@@ -403,6 +428,12 @@ const App = () => {
                 >
                   <LogOut size={18} />
                   <span>Déconnexion</span>
+                </button>
+                <button
+                  onClick={refreshData}
+                  className="w-full mt-3 flex items-center justify-center space-x-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2.5 rounded-lg font-semibold transition-all duration-200"
+                >
+                  <RefreshCcw size={18} />
                 </button>
               </div>
             </div>
@@ -429,11 +460,10 @@ const App = () => {
                     setActiveTab(tab.id);
                     setMobileMenuOpen(false);
                   }}
-                  className={`relative flex items-center space-x-2 px-5 py-3 rounded-xl font-semibold whitespace-nowrap transition-all duration-300 ${
-                    activeTab === tab.id
-                      ? 'bg-gradient-to-r ' + tab.color + ' text-white shadow-lg scale-105'
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 hover:scale-105'
-                  }`}
+                  className={`relative flex items-center space-x-2 px-5 py-3 rounded-xl font-semibold whitespace-nowrap transition-all duration-300 ${activeTab === tab.id
+                    ? 'bg-gradient-to-r ' + tab.color + ' text-white shadow-lg scale-105'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 hover:scale-105'
+                    }`}
                 >
                   <Icon size={20} className={activeTab === tab.id ? 'animate-pulse' : ''} />
                   <span className="hidden sm:inline">{tab.label}</span>
@@ -453,8 +483,8 @@ const App = () => {
         <div className="animate-in fade-in slide-in-from-bottom duration-500">
           {/* DASHBOARD */}
           {activeTab === 'dashboard' && (
-            <DashboardContent 
-              stats={stats} 
+            <DashboardContent
+              stats={stats}
               abonnements={abonnements}
               isLoadingData={isLoadingData}
             />
