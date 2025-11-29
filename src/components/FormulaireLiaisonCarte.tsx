@@ -71,9 +71,30 @@ const FormulaireLiaisonCarte = ({ cardId, abonnements, loading, onSuccess }: { c
             </div>
 
             <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">Date de fin</label>
-                <input type="date" className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Date de fin
+                </label>
+
+                <input
+                    type="date"
+                    className="
+            w-full 
+            px-4 py-3
+            border-2 border-gray-200 
+            rounded-xl 
+            text-gray-900
+            bg-white
+            focus:border-indigo-500 
+            focus:ring-2 
+            focus:ring-indigo-200
+            text-base
+            h-14
+        "
+                    value={dateFin}
+                    onChange={(e) => setDateFin(e.target.value)}
+                />
             </div>
+
 
             <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
