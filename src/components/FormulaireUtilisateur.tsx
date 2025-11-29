@@ -100,7 +100,7 @@ const FormulaireUtilisateur = ({ ajouterUtilisateur, abonnements, loading }: { a
         </select>
       </div>
 
-      <button onClick={handleSubmit} disabled={loading} className="w-full bg-linear-to-r from-green-500 to-emerald-600 text-white py-3 rounded-xl font-semibold hover:from-green-600 hover:to-emerald-700 transition duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+      <button onClick={handleSubmit} disabled={loading} className="w-full bg-linear-to-r from-indigo-600 to-indigo-700 text-white py-3 rounded-xl font-semibold hover:from-indigo-700 hover:to-indigo-800 transition duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
         {loading ? 'Ajout en cours...' : '✓ Ajouter le client'}
       </button>
     </div>

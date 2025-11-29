@@ -38,7 +38,7 @@ const UtilisateursContent = ({ utilisateurs, setShowModal, togglePaiement, suppr
                     <h2 className="text-3xl font-bold text-gray-800">Utilisateurs</h2>
                     <p className="text-gray-500 mt-1">Gérez vos clients et leurs abonnements</p>
                 </div>
-                <button onClick={() => setShowModal('utilisateur')} className="flex items-center space-x-2 bg-linear-to-r from-green-500 to-emerald-600 text-white px-6 py-3 rounded-xl hover:from-green-600 hover:to-emerald-700 transition duration-200 shadow-lg">
+                <button onClick={() => setShowModal('utilisateur')} className="flex items-center space-x-2 bg-linear-to-r from-indigo-600 to-indigo-700 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-indigo-800 transition duration-200 shadow-lg">
                     <PlusIcon />
                     <span>Nouveau Client</span>
                 </button>

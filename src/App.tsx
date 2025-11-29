@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, DollarSign, LogOut, Menu, X, Users, Sparkles, RefreshCcw } from 'lucide-react';
+import { TrendingUp, DollarSign, LogOut, Menu, X, Users, RefreshCcw, CreditCard } from 'lucide-react';
 import './App.css';
 
 // Imports des types
@@ -357,126 +357,84 @@ const App = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* HEADER PREMIUM */}
-      <header className="bg-gradient-to-r from-indigo-600 via-blue-600 to-purple-600 shadow-2xl relative overflow-hidden">
-        {/* Effet de brillance animé */}
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-pulse"></div>
+      <header className="bg-indigo-600 shadow-lg">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="flex justify-between items-center py-5">
-            {/* Logo et titre avec animation */}
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl blur opacity-75 animate-pulse"></div>
-                <div className="relative bg-white p-3 rounded-2xl shadow-xl transform transition-all duration-300 hover:scale-110 hover:rotate-3">
-                  <DollarSign className="text-indigo-600" size={32} />
-                </div>
-              </div>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-                    SubsManager
-                  </h1>
-                  <Sparkles className="text-yellow-300 animate-pulse" size={20} />
-                </div>
-                <p className="text-xs text-indigo-100 font-medium hidden sm:block">
-                  Gestion intelligente d'abonnements
-                </p>
-              </div>
+          {/* Logo */}
+          <div className="flex items-center space-x-3">
+            <div className="bg-white p-2 rounded-xl shadow-md">
+              <img src="/subsManager logo.svg" alt="SubsManager Logo" width={30} height={30} />
             </div>
+            <h1 className="text-white text-2xl font-bold tracking-wide">SubsManager</h1>
+          </div>
 
-            {/* Actions desktop avec design premium */}
-            <div className="hidden md:flex items-center space-x-4">
-              <div className="text-right bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/20">
-                <p className="text-sm text-white font-bold">Administrateur</p>
-                <div className="flex items-center space-x-1">
-                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                  <p className="text-xs text-indigo-100">En ligne</p>
-                </div>
-              </div>
-              <button
-                onClick={handleLogout}
-                className="group flex items-center space-x-2 bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-5 py-2.5 rounded-xl transition-all duration-300 border border-white/30 hover:border-white/50 hover:shadow-lg hover:scale-105"
-              >
-                <LogOut size={18} className="group-hover:rotate-12 transition-transform" />
-                <span className="font-semibold">Déconnexion</span>
-              </button>
-              <button
-                onClick={refreshData}
-                className="flex items-center space-x-2 bg-white/20 hover:bg-white/30 backdrop-blur-md text-white px-4 py-2 rounded-xl transition-all duration-200"
-              >
-                <RefreshCcw size={18} />
-              </button>
-
-            </div>
-
-            {/* Menu mobile amélioré */}
+          {/* Actions desktop */}
+          <div className="hidden md:flex items-center space-x-3">
             <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden text-white p-2.5 hover:bg-white/20 rounded-xl transition-all duration-200 backdrop-blur-sm"
+              onClick={refreshData}
+              className="px-4 py-2 rounded-lg bg-indigo-500 hover:bg-indigo-400 text-white flex items-center space-x-2"
             >
-              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+              <RefreshCcw size={18} />
+              <span>Rafraîchir</span>
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="px-4 py-2 rounded-lg bg-white text-indigo-600 hover:bg-indigo-50 font-semibold flex items-center space-x-2"
+            >
+              <LogOut size={18} />
+              <span>Déconnexion</span>
             </button>
           </div>
 
-          {/* Menu mobile dropdown stylisé */}
-          {mobileMenuOpen && (
-            <div className="md:hidden pb-4 animate-in fade-in slide-in-from-top duration-300">
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-3 border border-white/20">
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center justify-center space-x-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2.5 rounded-lg font-semibold transition-all duration-200"
-                >
-                  <LogOut size={18} />
-                  <span>Déconnexion</span>
-                </button>
-                <button
-                  onClick={refreshData}
-                  className="w-full mt-3 flex items-center justify-center space-x-2 bg-white/20 hover:bg-white/30 text-white px-4 py-2.5 rounded-lg font-semibold transition-all duration-200"
-                >
-                  <RefreshCcw size={18} />
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Mobile menu button */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden text-white"
+          >
+            {mobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
+          </button>
+
         </div>
+
+        {/* Mobile dropdown */}
+        {mobileMenuOpen && (
+          <div className="md:hidden bg-indigo-700 text-white py-3 px-4 space-y-3">
+            <button onClick={refreshData} className="w-full bg-indigo-500 py-2 rounded-lg">Rafraîchir</button>
+            <button onClick={handleLogout} className="w-full bg-white text-indigo-600 py-2 rounded-lg">Déconnexion</button>
+          </div>
+        )}
       </header>
 
-      {/* NAVIGATION MODERNE AVEC GLASSMORPHISM */}
-      <nav className="bg-white/80 backdrop-blur-xl shadow-lg sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-2 overflow-x-auto scrollbar-hide py-3">
-            {[
-              { id: 'dashboard', label: 'Tableau de bord', icon: TrendingUp, color: 'from-blue-500 to-cyan-500' },
-              { id: 'abonnements', label: 'Abonnements', icon: DollarSign, color: 'from-green-500 to-emerald-500' },
-              { id: 'utilisateurs', label: 'Utilisateurs', icon: Users, color: 'from-purple-500 to-pink-500' },
-              { id: 'vendeurs', label: 'Vendeurs', icon: Users, color: 'from-orange-500 to-red-500' },
-              { id: 'cartes', label: 'Cartes prépayées', icon: DollarSign, color: 'from-indigo-500 to-purple-500' }
-            ].map(tab => {
-              const Icon = tab.icon;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`relative flex items-center space-x-2 px-5 py-3 rounded-xl font-semibold whitespace-nowrap transition-all duration-300 ${activeTab === tab.id
-                    ? 'bg-gradient-to-r ' + tab.color + ' text-white shadow-lg scale-105'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100 hover:scale-105'
-                    }`}
-                >
-                  <Icon size={20} className={activeTab === tab.id ? 'animate-pulse' : ''} />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                  <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
-                  {activeTab === tab.id && (
-                    <div className="absolute bottom-0 left-0 right-0 h-1 rounded-full"></div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+      {/* NAVIGATION MODERNE AVEC GLASSMORPHISM */} 
+      <nav className="bg-white shadow-md sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 py-3 flex overflow-x-auto space-x-2 scrollbar-hide">
+
+          {[
+            { id: 'dashboard', label: 'Tableau de bord', icon: TrendingUp },
+            { id: 'abonnements', label: 'Abonnements', icon: DollarSign },
+            { id: 'utilisateurs', label: 'Utilisateurs', icon: Users },
+            { id: 'vendeurs', label: 'Vendeurs', icon: Users },
+            { id: 'cartes', label: 'Cartes prépayées', icon: CreditCard },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-xl border transition-all
+          ${activeTab === tab.id
+                  ? 'bg-indigo-600 text-white border-indigo-600'
+                  : 'bg-white text-indigo-600 border-indigo-300 hover:bg-indigo-50'
+                }
+        `}
+            >
+              <tab.icon size={18} />
+              <span className="font-medium whitespace-nowrap">{tab.label}</span>
+            </button>
+          ))}
+
         </div>
       </nav>
+
 
       {/* CONTENU PRINCIPAL AVEC ANIMATIONS */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
