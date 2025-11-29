@@ -52,7 +52,7 @@ const AbonnementsContent: FC<Props> = ({
 
           <button
             onClick={() => setShowModal("abonnement")}
-            className="flex items-center space-x-2 bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
+            className="flex items-center space-x-2 bg-linear-to-r from-indigo-600 to-indigo-700 text-white px-6 py-3 rounded-xl hover:from-indigo-700 hover:to-indigo-800 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
             aria-label="Créer un abonnement"
           >
             <Plus size={20} strokeWidth={2.5} />
@@ -137,7 +137,7 @@ const AbonnementsContent: FC<Props> = ({
                 className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-indigo-200"
               >
                 {/* Header */}
-                <div className="relative bg-gradient-to-br from-indigo-700 via-indigo-600 to-indigo-800 p-6 text-white">
+                <div className="relative bg-linear-to-br from-indigo-700 via-indigo-600 to-indigo-800 p-6 text-white">
                   <div className="absolute inset-0 opacity-10 pointer-events-none">
                     <div className="absolute top-0 right-0 w-40 h-40 bg-white rounded-full -mr-20 -mt-20"></div>
                     <div className="absolute bottom-0 left-0 w-32 h-32 bg-white rounded-full -ml-16 -mb-16"></div>
