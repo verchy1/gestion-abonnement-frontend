@@ -46,5 +46,15 @@ export interface Stats {
   paiementsEnAttente: number;
 }
 
+export interface Admin {
+  _id: string;
+  identifiant: string;
+  nom: string;
+  email: string;
+  telephone?: string;
+  role: string;
+  dateCreation: string;
+}
+
 // export const API_URL = 'http://localhost:5000/api';
 export const API_URL = 'https://gestion-abonnement-backend.onrender.com/api';

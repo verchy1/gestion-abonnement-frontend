@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, DollarSign, LogOut, Menu, X, Users, RefreshCcw, CreditCard } from 'lucide-react';
+import { TrendingUp, DollarSign, LogOut, Menu, X, Users, RefreshCcw, CreditCard, User } from 'lucide-react';
 import './App.css';
 
 // Imports des types
 import { API_URL } from './types';
-import type { CartePrepayee } from './types';
+import type { Admin, CartePrepayee } from './types';
 
 // Imports des composants
 import PageConnexion from './components/PageConnexion';
@@ -18,6 +18,7 @@ import FormulaireAbonnement from './components/FormulaireAbonnement';
 import FormulaireUtilisateur from './components/FormulaireUtilisateur';
 import FormulaireCarte from './components/FormulaireCarte';
 import FormulaireLiaisonCarte from './components/FormulaireLiaisonCarte';
+import MonProfile from './components/MonProfile';
 
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -41,6 +42,8 @@ const App = () => {
     commissionsTotal: 0,
     paiementsEnAttente: 0
   });
+  // État pour les données du profil
+  const [adminProfile, setAdminProfile] = useState<Admin | null>(null);
 
   const refreshData = async () => {
     if (!token) return;
@@ -50,7 +53,8 @@ const App = () => {
         chargerAbonnements(),
         chargerUtilisateurs(),
         chargerStats(),
-        chargerCartes()
+        chargerCartes(),
+        chargerProfil()
       ]);
     } catch (error) {
       console.error('Erreur actualisation des données :', error);
@@ -79,12 +83,13 @@ const App = () => {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${token}`
           };
-          const [abonRes, utilRes, vendRes, statsRes, cartesRes] = await Promise.all([
+          const [abonRes, utilRes, vendRes, statsRes, cartesRes, profileRes] = await Promise.all([
             fetch(`${API_URL}/abonnements`, { headers }),
             fetch(`${API_URL}/utilisateurs`, { headers }),
             fetch(`${API_URL}/vendeurs`, { headers }),
             fetch(`${API_URL}/stats`, { headers }),
-            fetch(`${API_URL}/cartes`, { headers })
+            fetch(`${API_URL}/cartes`, { headers }),
+            fetch(`${API_URL}/admin/profile`, { headers })
           ]);
 
           if (abonRes.ok) setAbonnements(await abonRes.json());
@@ -92,6 +97,7 @@ const App = () => {
           if (vendRes.ok) setVendeurs(await vendRes.json());
           if (statsRes.ok) setStats(await statsRes.json());
           if (cartesRes && cartesRes.ok) setCartes(await cartesRes.json());
+          if (profileRes && profileRes.ok) setAdminProfile(await profileRes.json()); // NOUVEAU
         } catch (error) {
           console.error('Erreur chargement données:', error);
         } finally {
@@ -107,6 +113,78 @@ const App = () => {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
   });
+
+  // Charger le profil de l'admin
+  const chargerProfil = async () => {
+    try {
+      const response = await fetch(`${API_URL}/admin/profile`, {
+        headers: getHeaders()
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setAdminProfile(data);
+      }
+    } catch (error) {
+      console.error('Erreur chargement profil:', error);
+    }
+  };
+
+  // Mettre à jour le profil
+  const mettreAJourProfil = async (data: { nom: string; email: string; telephone?: string }) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/admin/profile`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        const updatedProfile = await response.json();
+        setAdminProfile(updatedProfile);
+        alert('Profil mis à jour avec succès');
+        return true;
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Erreur lors de la mise à jour');
+        return false;
+      }
+    } catch (error) {
+      console.error('Erreur mise à jour profil:', error);
+      alert('Erreur de connexion au serveur');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Changer le mot de passe
+  const changerMotDePasse = async (data: { ancienMotDePasse: string; nouveauMotDePasse: string }) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/admin/profile/password`, {
+        method: 'PATCH',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        alert('Mot de passe modifié avec succès');
+        return true;
+      } else {
+        const error = await response.json();
+        alert(error.message || 'Erreur lors du changement de mot de passe');
+        return false;
+      }
+    } catch (error) {
+      console.error('Erreur changement mot de passe:', error);
+      alert('Erreur de connexion au serveur');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // Charger les abonnements
   const chargerAbonnements = async () => {
@@ -406,7 +484,7 @@ const App = () => {
         )}
       </header>
 
-      {/* NAVIGATION MODERNE AVEC GLASSMORPHISM */} 
+      {/* NAVIGATION MODERNE AVEC GLASSMORPHISM */}
       <nav className="bg-white shadow-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-3 flex overflow-x-auto space-x-2 scrollbar-hide">
 
@@ -416,6 +494,7 @@ const App = () => {
             { id: 'utilisateurs', label: 'Utilisateurs', icon: Users },
             { id: 'vendeurs', label: 'Vendeurs', icon: Users },
             { id: 'cartes', label: 'Cartes prépayées', icon: CreditCard },
+            { id: 'profile', label: 'Mon profil', icon: User },
           ].map(tab => (
             <button
               key={tab.id}
@@ -487,6 +566,16 @@ const App = () => {
               supprimerAbonnementCarte={supprimerAbonnementCarte}
               loading={loading}
               onLinkClick={(id: string) => { setSelectedCardForLink(id); setShowModal('link'); }}
+            />
+          )}
+
+          {/* MON PROFIL */}
+          {activeTab === 'profile' && (
+            <MonProfile
+              adminProfile={adminProfile}
+              mettreAJourProfil={mettreAJourProfil}
+              changerMotDePasse={changerMotDePasse}
+              loading={loading}
             />
           )}
         </div>

@@ -72,32 +72,6 @@ const FormulaireLiaisonCarte = ({ cardId, abonnements, loading, onSuccess }: { c
 
             <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                    Date de fin
-                </label>
-
-                <input
-                    type="date"
-                    className="
-            w-full 
-            px-4 py-3
-            border-2 border-gray-200 
-            rounded-xl 
-            text-gray-900
-            bg-white
-            focus:border-indigo-500 
-            focus:ring-2 
-            focus:ring-indigo-200
-            text-base
-            h-14
-        "
-                    value={dateFin}
-                    onChange={(e) => setDateFin(e.target.value)}
-                />
-            </div>
-
-
-            <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-2">
                     Prix fournisseur (FCFA)
                 </label>
                 <input
@@ -108,6 +82,13 @@ const FormulaireLiaisonCarte = ({ cardId, abonnements, loading, onSuccess }: { c
                     placeholder="Ex: 1200"
                 />
             </div>
+            
+            <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Date de fin</label>
+                <input type="date" className="px-2 py-3 border-2 border-gray-200 rounded-xl" value={dateFin} onChange={(e) => setDateFin(e.target.value)} />
+            </div>
+
+
 
 
             <button onClick={handleSubmit} disabled={loading} className="w-full bg-linear-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold">
