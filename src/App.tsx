@@ -46,7 +46,7 @@ const App = () => {
   // État pour les données du profil
   const [adminProfile, setAdminProfile] = useState<Admin | null>(null);
 
-   // 🆕 NOUVEAU : État pour gérer le modal des profils
+  // 🆕 NOUVEAU : État pour gérer le modal des profils
   const [selectedAbonnementForProfils, setSelectedAbonnementForProfils] = useState<Abonnement | null>(null);
 
   // Fonction pour rafraîchir les données
@@ -254,7 +254,7 @@ const App = () => {
     try {
       setLoading(true);
       console.log('📤 Données envoyées:', data); // DEBUG
-      
+
       const response = await fetch(`${API_URL}/abonnements`, {
         method: 'POST',
         headers: getHeaders(),
@@ -538,7 +538,7 @@ const App = () => {
           )}
 
           {/* ABONNEMENTS */}
-           {activeTab === 'abonnements' && (
+          {activeTab === 'abonnements' && (
             <AbonnementsContent
               abonnements={abonnements}
               setShowModal={setShowModal}
@@ -654,6 +654,7 @@ const App = () => {
       {/* 🆕 NOUVEAU : Modal du gestionnaire de profils */}
       {selectedAbonnementForProfils && token && (
         <ProfilsManager
+          utilisateurs={utilisateurs}
           abonnement={selectedAbonnementForProfils}
           onClose={() => setSelectedAbonnementForProfils(null)}
           onUpdate={async () => {
