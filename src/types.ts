@@ -1,4 +1,19 @@
 // Types partagés pour l'application
+
+export interface Profil {
+  _id: string;
+  nom: string;
+  codePIN: string;
+  utilisateurId?: {
+    _id: string;
+    nom: string;
+    telephone: string;
+  } | null;
+  avatar: string;
+  estEnfant: boolean;
+  dateAssignation?: string | null;
+}
+
 export interface Abonnement {
   _id: string;
   service: string;
@@ -9,6 +24,11 @@ export interface Abonnement {
   vendeurId?: string;
   emailService?: string;
   prixFournisseur?: number;
+  profils?: Profil[]; // 🆕 NOUVEAU
+  credentials?: {
+    email: string;
+    password: string;
+  };
 }
 
 export interface Utilisateur {

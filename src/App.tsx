@@ -4,7 +4,7 @@ import './App.css';
 
 // Imports des types
 import { API_URL } from './types';
-import type { Admin, CartePrepayee } from './types';
+import type { Abonnement, Admin, CartePrepayee } from './types';
 
 // Imports des composants
 import PageConnexion from './components/PageConnexion';
@@ -19,6 +19,7 @@ import FormulaireUtilisateur from './components/FormulaireUtilisateur';
 import FormulaireCarte from './components/FormulaireCarte';
 import FormulaireLiaisonCarte from './components/FormulaireLiaisonCarte';
 import MonProfile from './components/MonProfile';
+import ProfilsManager from './components/ProfilsManager';
 
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -45,6 +46,10 @@ const App = () => {
   // État pour les données du profil
   const [adminProfile, setAdminProfile] = useState<Admin | null>(null);
 
+   // 🆕 NOUVEAU : État pour gérer le modal des profils
+  const [selectedAbonnementForProfils, setSelectedAbonnementForProfils] = useState<Abonnement | null>(null);
+
+  // Fonction pour rafraîchir les données
   const refreshData = async () => {
     if (!token) return;
     setIsLoadingData(true);
@@ -248,6 +253,8 @@ const App = () => {
   const ajouterAbonnement = async (data: Record<string, unknown>) => {
     try {
       setLoading(true);
+      console.log('📤 Données envoyées:', data); // DEBUG
+      
       const response = await fetch(`${API_URL}/abonnements`, {
         method: 'POST',
         headers: getHeaders(),
@@ -258,8 +265,11 @@ const App = () => {
         await chargerAbonnements();
         await chargerStats();
         setShowModal(null);
+        alert('Abonnement ajouté avec succès !');
       } else {
-        alert('Erreur lors de l\'ajout de l\'abonnement');
+        const errorData = await response.json();
+        console.error('❌ Erreur backend:', errorData); // DEBUG
+        alert(`Erreur: ${errorData.message || 'Erreur inconnue'}\nDétails: ${errorData.error || ''}`);
       }
     } catch (error) {
       console.error('Erreur ajout abonnement:', error);
@@ -528,13 +538,14 @@ const App = () => {
           )}
 
           {/* ABONNEMENTS */}
-          {activeTab === 'abonnements' && (
+           {activeTab === 'abonnements' && (
             <AbonnementsContent
               abonnements={abonnements}
               setShowModal={setShowModal}
               supprimerItem={supprimerItem}
               loading={loading}
               isLoadingData={isLoadingData}
+              onGererProfils={(abonnement: Abonnement) => setSelectedAbonnementForProfils(abonnement)}
             />
           )}
 
@@ -638,6 +649,23 @@ const App = () => {
             onSuccess={async () => { await chargerCartes(); setShowModal(null); setSelectedCardForLink(null); }}
           />
         </Modal>
+      )}
+
+      {/* 🆕 NOUVEAU : Modal du gestionnaire de profils */}
+      {selectedAbonnementForProfils && token && (
+        <ProfilsManager
+          abonnement={selectedAbonnementForProfils}
+          onClose={() => setSelectedAbonnementForProfils(null)}
+          onUpdate={async () => {
+            await chargerAbonnements();
+            // Mettre à jour l'abonnement sélectionné avec les nouvelles données
+            const updatedAbo = abonnements.find(a => a === selectedAbonnementForProfils._id);
+            if (updatedAbo) {
+              setSelectedAbonnementForProfils(updatedAbo as Abonnement);
+            }
+          }}
+          token={token}
+        />
       )}
     </div>
   );

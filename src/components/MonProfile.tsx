@@ -9,6 +9,7 @@ interface Admin {
   telephone?: string;
   role: string;
   dateCreation: string;
+  identifiant: string;
 }
 
 interface MonProfileProps {
@@ -28,7 +29,8 @@ const MonProfile = ({ adminProfile, mettreAJourProfil, changerMotDePasse, loadin
   const [profileForm, setProfileForm] = useState({
     nom: adminProfile?.nom || '',
     email: adminProfile?.email || '',
-    telephone: adminProfile?.telephone || ''
+    telephone: adminProfile?.telephone || '',
+    identifiant: adminProfile?.identifiant || ''
   });
 
   // États pour le formulaire mot de passe
@@ -87,7 +89,7 @@ const MonProfile = ({ adminProfile, mettreAJourProfil, changerMotDePasse, loadin
   return (
     <div className="space-y-6">
       {/* En-tête */}
-      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-xl">
+      <div className="bg-linear-to-r from-indigo-600 to-purple-600 rounded-2xl p-8 text-white shadow-xl">
         <div className="flex items-center space-x-4">
           <div className="bg-white/20 p-4 rounded-full">
             <User size={40} />
@@ -109,7 +111,8 @@ const MonProfile = ({ adminProfile, mettreAJourProfil, changerMotDePasse, loadin
                 setProfileForm({
                   nom: adminProfile.nom,
                   email: adminProfile.email,
-                  telephone: adminProfile.telephone || ''
+                  telephone: adminProfile.telephone || '',
+                  identifiant: adminProfile.identifiant
                 });
                 setIsEditingProfile(true);
               }}
@@ -131,6 +134,20 @@ const MonProfile = ({ adminProfile, mettreAJourProfil, changerMotDePasse, loadin
                 type="text"
                 value={profileForm.nom}
                 onChange={(e) => setProfileForm({ ...profileForm, nom: e.target.value })}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <User className="inline mr-2" size={18} />
+                Identifiant
+              </label>
+              <input
+                type="text"
+                value={profileForm.identifiant}
+                onChange={(e) => setProfileForm({ ...profileForm, identifiant: e.target.value })}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
                 required
               />

@@ -6,6 +6,7 @@ import {
   Users,
   Mail,
   AlertTriangle,
+  UserCog, // 🆕 NOUVEAU ICON
 } from "lucide-react";
 import type { Abonnement } from "../types";
 import { SkeletonAbonnementCards } from "./Skeleton";
@@ -16,6 +17,7 @@ interface Props {
   supprimerItem: (type: string, id: string) => Promise<void>;
   loading: boolean;
   isLoadingData: boolean;
+  onGererProfils: (abonnement: Abonnement) => void; // 🆕 NOUVEAU
 }
 
 const AbonnementsContent: FC<Props> = ({
@@ -24,12 +26,12 @@ const AbonnementsContent: FC<Props> = ({
   supprimerItem,
   loading,
   isLoadingData,
+  onGererProfils, // 🆕 NOUVEAU
 }) => {
   if (isLoadingData) {
     return <SkeletonAbonnementCards />;
   }
 
-  // Statistiques (gardez des valeurs sûres)
   const totalSlots = abonnements.reduce((acc, abo) => acc + (abo.slots || 0), 0);
   const totalUtilises = abonnements.reduce((acc, abo) => acc + (abo.utilises || 0), 0);
   const revenuTotal = abonnements.reduce((acc, abo) => acc + (abo.prix || 0), 0);
@@ -192,8 +194,16 @@ const AbonnementsContent: FC<Props> = ({
                   )}
                 </div>
 
-                {/* Footer */}
+                {/* Footer - 🆕 MODIFIÉ */}
                 <div className="px-5 pb-5 flex space-x-2">
+                  <button
+                    onClick={() => onGererProfils(a)}
+                    className="flex items-center justify-center flex-1 space-x-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 py-2.5 rounded-xl border border-indigo-200 hover:border-indigo-300 transition-all duration-200 font-medium"
+                  >
+                    <UserCog size={16} />
+                    <span>Profils</span>
+                  </button>
+                  
                   <button
                     onClick={() => supprimerItem("abonnement", a._id as string)}
                     disabled={loading}

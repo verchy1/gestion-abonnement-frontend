@@ -21,6 +21,8 @@ const FormulaireAbonnement = ({ ajouterAbonnement, vendeurs, loading }: { ajoute
   const handleSubmit = () => {
     if (form.service && form.prix && form.slots && form.emailService) {
       const data: Record<string, unknown> = { ...form };
+      console.log(data);
+      
       if (form.proprio === 'Moi') {
         delete data['vendeurId'];
       }
@@ -47,12 +49,12 @@ const FormulaireAbonnement = ({ ajouterAbonnement, vendeurs, loading }: { ajoute
 
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-2">Prix par utilisateur (FCFA)</label>
-        <input type="number" placeholder="Ex: 1800" className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition duration-200" value={form.prix} onChange={(e) => setForm({ ...form, prix: parseInt(e.target.value) || '' })} />
+        <input type="number" placeholder="Ex: 1800" className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition duration-200" value={form.prix} onChange={(e) => setForm({ ...form, prix: Number(e.target.value) })} />
       </div>
 
       <div>
         <label className="block text-sm font-semibold text-gray-700 mb-2">Nombre de places disponibles</label>
-        <input type="number" placeholder="Ex: 4" className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition duration-200" value={form.slots} onChange={(e) => setForm({ ...form, slots: parseInt(e.target.value) || '' })} />
+        <input type="number" placeholder="Ex: 4" className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-indigo-500 transition duration-200" value={form.slots} onChange={(e) => setForm({ ...form, slots: Number(e.target.value) })} />
       </div>
 
       <div>
