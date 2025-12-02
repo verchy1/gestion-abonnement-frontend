@@ -131,7 +131,22 @@ const UtilisateursContent = ({ utilisateurs, setShowModal, togglePaiement, suppr
                                             <p className="text-sm text-gray-500">{user.telephone}</p>
                                         </div>
                                     </div>
-                                    <button onClick={() => supprimerItem('utilisateur', user._id)} disabled={loading} className="text-red-600"><Trash2 size={18} /></button>
+                                    <div className="flex items-center space-x-2">
+                                        <button 
+                                            onClick={() => genererRecu(user._id)} 
+                                            disabled={loading}
+                                            className="text-indigo-600 hover:text-indigo-800 transition duration-150 disabled:opacity-50 p-2"
+                                        >
+                                            <DownloadIcon size={18} />
+                                        </button>
+                                        <button 
+                                            onClick={() => supprimerItem('utilisateur', user._id)} 
+                                            disabled={loading} 
+                                            className="text-red-600 hover:text-red-800 transition duration-150 disabled:opacity-50 p-2"
+                                        >
+                                            <Trash2 size={18} />
+                                        </button>
+                                    </div>
                                 </div>
                                 <div className="space-y-2 text-sm">
                                     <div className="flex justify-between"><span className="text-gray-600">Service:</span><span className="font-medium text-gray-900">{user.abonnementId?.service || 'N/A'}</span></div>
