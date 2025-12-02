@@ -1,5 +1,4 @@
 // Types partagés pour l'application
-
 export interface Profil {
   _id: string;
   nom: string;
@@ -76,5 +75,5 @@ export interface Admin {
   dateCreation: string;
 }
 
-// export const API_URL = 'http://localhost:5000/api';
-export const API_URL = 'https://gestion-abonnement-backend.onrender.com/api';
+export const API_URL = 'http://localhost:5000/api';
+// export const API_URL = 'https://gestion-abonnement-backend.onrender.com/api';

@@ -1,4 +1,4 @@
-import { Users, Trash2 } from 'lucide-react';
+import { Users, Trash2, DownloadIcon } from 'lucide-react';
 import type { Utilisateur } from '../types';
 import { SkeletonTable } from './Skeleton';
 
@@ -27,7 +27,7 @@ const getExpirationStatus = (dateFin: string) => {
 };
 
 
-const UtilisateursContent = ({ utilisateurs, setShowModal, togglePaiement, supprimerItem, loading, formatDate, isLoadingData }: { utilisateurs: Utilisateur[]; setShowModal: (value: string | null) => void; togglePaiement: (id: string, payeActuel: boolean) => Promise<void>; supprimerItem: (type: string, id: string) => Promise<void>; loading: boolean; formatDate: (date: string) => string; isLoadingData: boolean }) => {
+const UtilisateursContent = ({ utilisateurs, setShowModal, togglePaiement, supprimerItem, loading, formatDate, isLoadingData, genererRecu }: { utilisateurs: Utilisateur[]; setShowModal: (value: string | null) => void; togglePaiement: (id: string, payeActuel: boolean) => Promise<void>; supprimerItem: (type: string, id: string) => Promise<void>; loading: boolean; formatDate: (date: string) => string; isLoadingData: boolean; genererRecu: (userId: string) => Promise<void> }) => {
     if (isLoadingData) {
         return <SkeletonTable />;
     }
@@ -98,8 +98,22 @@ const UtilisateursContent = ({ utilisateurs, setShowModal, togglePaiement, suppr
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <button onClick={() => togglePaiement(user._id, user.paye)} className={`inline-flex px-3 py-1 text-xs font-semibold rounded-full transition duration-200 ${user.paye ? 'bg-green-100 text-green-800 hover:bg-green-200' : 'bg-red-100 text-red-800 hover:bg-red-200'}`}>{user.paye ? '✓ Payé' : '✗ Non payé'}</button>
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                            <button onClick={() => supprimerItem('utilisateur', user._id)} disabled={loading} className="text-red-600 hover:text-red-800 transition duration-150 disabled:opacity-50"><Trash2 size={18} /></button>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm space-x-3">
+                                            <button
+                                                onClick={() => genererRecu(user._id)}
+                                                className="text-indigo-600 hover:text-indigo-800 transition duration-150 disabled:opacity-50 cursor-pointer"
+                                                disabled={loading}
+                                            >
+                                                <DownloadIcon size={18} />
+                                            </button>
+
+                                            <button
+                                                onClick={() => supprimerItem('utilisateur', user._id)}
+                                                disabled={loading}
+                                                className="text-red-600 hover:text-red-800 transition duration-150 disabled:opacity-50 cursor-pointer"
+                                            >
+                                                <Trash2 size={18} />
+                                            </button>
                                         </td>
                                     </tr>
                                 ))}

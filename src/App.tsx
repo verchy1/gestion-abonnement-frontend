@@ -68,6 +68,33 @@ const App = () => {
     }
   };
 
+  const genererRecu = async (userId: string) => {
+    try {
+      const response = await fetch(`${API_URL}/recu/${userId}`, {
+        headers: getHeaders(),
+      });
+
+      if (!response.ok) {
+        alert("Erreur lors de la génération du reçu");
+        return;
+      }
+
+      // Récupérer le PDF sous forme de blob
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+
+      // Télécharger automatiquement
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `recu_${userId}.pdf`;
+      a.click();
+    } catch (error) {
+      console.error("Erreur:", error);
+      alert("Impossible de générer le reçu");
+    }
+  };
+
+
 
   // Vérifier si l'utilisateur est déjà connecté
   useEffect(() => {
@@ -557,8 +584,9 @@ const App = () => {
               togglePaiement={togglePaiement}
               supprimerItem={supprimerItem}
               loading={loading}
-              formatDate={formatDate}
               isLoadingData={isLoadingData}
+              formatDate={formatDate}
+              genererRecu={genererRecu}   // 🆕
             />
           )}
 
