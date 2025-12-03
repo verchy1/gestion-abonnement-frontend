@@ -6,10 +6,32 @@ import {
   Users,
   Mail,
   AlertTriangle,
-  UserCog, // 🆕 NOUVEAU ICON
+  UserCog,
+  TrendingUp,
 } from "lucide-react";
-import type { Abonnement } from "../types";
-import { SkeletonAbonnementCards } from "./Skeleton";
+
+// Types simplifiés pour la démo
+interface Profil {
+  _id: string;
+  nom: string;
+}
+
+interface Abonnement {
+  _id: string;
+  service: string;
+  prix: number;
+  slots: number;
+  utilises: number;
+  proprio: string;
+  vendeurId?: string;
+  emailService?: string;
+  prixFournisseur?: number;
+  profils?: Profil[];
+  credentials?: {
+    email: string;
+    password: string;
+  };
+}
 
 interface Props {
   abonnements: Abonnement[];
@@ -17,7 +39,7 @@ interface Props {
   supprimerItem: (type: string, id: string) => Promise<void>;
   loading: boolean;
   isLoadingData: boolean;
-  onGererProfils: (abonnement: Abonnement) => void; // 🆕 NOUVEAU
+  onGererProfils: (abonnement: Abonnement) => void;
 }
 
 const AbonnementsContent: FC<Props> = ({
@@ -26,15 +48,43 @@ const AbonnementsContent: FC<Props> = ({
   supprimerItem,
   loading,
   isLoadingData,
-  onGererProfils, // 🆕 NOUVEAU
+  onGererProfils,
 }) => {
   if (isLoadingData) {
-    return <SkeletonAbonnementCards />;
+    return (
+      <div className="space-y-6">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="bg-white rounded-2xl shadow-md p-6 animate-pulse">
+            <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+            <div className="h-4 bg-gray-200 rounded w-2/3"></div>
+          </div>
+        ))}
+      </div>
+    );
   }
 
   const totalSlots = abonnements.reduce((acc, abo) => acc + (abo.slots || 0), 0);
   const totalUtilises = abonnements.reduce((acc, abo) => acc + (abo.utilises || 0), 0);
-  const revenuTotal = abonnements.reduce((acc, abo) => acc + (abo.prix || 0), 0);
+
+  // 🆕 Calcul du revenu total (prix de vente)
+  const revenuTotal = abonnements.reduce(
+    (acc, abo) => acc + ((abo.prix || 0) * (abo.utilises || 0)),
+    0
+  );
+
+  // 🆕 NOUVEAU : Calcul du coût total fournisseur
+  // Le coût fournisseur est payé UNE FOIS par abonnement, pas par utilisateur
+  const coutFournisseurTotal = abonnements.reduce(
+    (acc, abo) => {
+      // On paie le prix fournisseur une seule fois, peu importe le nombre d'utilisateurs
+      const prixFourn = abo.prixFournisseur || 0;
+      return acc + prixFourn;
+    },
+    0
+  );
+
+  // 🆕 NOUVEAU : Calcul du bénéfice net
+  const beneficeNet = revenuTotal - coutFournisseurTotal;
 
   const overallPercent = totalSlots ? Math.round((totalUtilises / totalSlots) * 100) : 0;
 
@@ -63,7 +113,8 @@ const AbonnementsContent: FC<Props> = ({
         </div>
 
         {abonnements.length > 0 && (
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6 pt-6 border-t border-gray-100">
+            {/* Revenus totaux */}
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-blue-50 rounded-lg">
                 <DollarSign className="text-blue-600" size={20} />
@@ -78,25 +129,46 @@ const AbonnementsContent: FC<Props> = ({
               </div>
             </div>
 
+            {/* 🆕 NOUVEAU : Coût fournisseur */}
             <div className="flex items-center space-x-3">
-              <div className="p-2 bg-green-50 rounded-lg">
-                <Users className="text-green-600" size={20} />
+              <div className="p-2 bg-orange-50 rounded-lg">
+                <DollarSign className="text-orange-600" size={20} />
               </div>
               <div>
-                <p className="text-xs text-gray-500 font-medium">Places totales</p>
+                <p className="text-xs text-gray-500 font-medium">
+                  Coût fournisseur
+                </p>
                 <p className="text-lg font-bold text-gray-900">
-                  {totalUtilises}/{totalSlots}
+                  {coutFournisseurTotal.toLocaleString()} FCFA
                 </p>
               </div>
             </div>
 
+            {/* 🆕 NOUVEAU : Bénéfice net */}
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-emerald-50 rounded-lg">
+                <TrendingUp className="text-emerald-600" size={20} />
+              </div>
+              <div>
+                <p className="text-xs text-gray-500 font-medium">
+                  Bénéfice net
+                </p>
+                <p className="text-lg font-bold text-emerald-600">
+                  {beneficeNet.toLocaleString()} FCFA
+                </p>
+              </div>
+            </div>
+
+            {/* Places totales */}
             <div className="flex items-center space-x-3">
               <div className="p-2 bg-purple-50 rounded-lg">
-                <span className="text-purple-600 text-sm font-semibold">{overallPercent}%</span>
+                <Users className="text-purple-600" size={20} />
               </div>
               <div>
                 <p className="text-xs text-gray-500 font-medium">Taux global</p>
-                <p className="text-lg font-bold text-gray-900">{overallPercent}%</p>
+                <p className="text-lg font-bold text-gray-900">
+                  {totalUtilises}/{totalSlots} ({overallPercent}%)
+                </p>
               </div>
             </div>
           </div>
@@ -129,9 +201,18 @@ const AbonnementsContent: FC<Props> = ({
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {abonnements.map((a) => {
             const percent = a.slots ? Math.round(((a.utilises || 0) / a.slots) * 100) : 0;
-
             const percentColor =
               percent >= 90 ? "text-red-600" : percent >= 60 ? "text-yellow-600" : "text-emerald-600";
+
+            // 🆕 NOUVEAU : Calcul du bénéfice par abonnement
+            // 🆕 Correct : Calcul du bénéfice par abonnement
+            const revenuAbonnement = (a.prix || 0) * (a.utilises || 0);
+
+            // Le coût fournisseur est payé UNE seule fois
+            const coutAbonnement = a.prixFournisseur || 0;
+
+            const beneficeAbonnement = revenuAbonnement - coutAbonnement;
+
 
             return (
               <div
@@ -148,17 +229,21 @@ const AbonnementsContent: FC<Props> = ({
                   <div className="relative flex justify-between items-start">
                     <h3 className="text-xl font-bold tracking-wide">{a.service}</h3>
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                        percent >= 90
+                      className={`px-3 py-1 rounded-full text-xs font-bold border ${percent >= 90
                           ? "bg-red-500/20 text-red-300 border-red-400/30"
                           : "bg-emerald-500/20 text-emerald-300 border-emerald-400/30"
-                      }`}
+                        }`}
                     >
                       {percent}%
                     </span>
                   </div>
 
-                  <p className="text-indigo-200 mt-2">{a.prix} FCFA</p>
+                  <div className="relative mt-3 space-y-1">
+                    <p className="text-indigo-200 text-sm">Prix: {a.prix} FCFA</p>
+                    {a.prixFournisseur !== undefined && (
+                      <p className="text-indigo-300 text-xs">Coût: {a.prixFournisseur} FCFA</p>
+                    )}
+                  </div>
                 </div>
 
                 {/* Body */}
@@ -179,22 +264,39 @@ const AbonnementsContent: FC<Props> = ({
                     </div>
                   </div>
 
+                  {/* 🆕 NOUVEAU : Bénéfice de cet abonnement */}
+                  {a.prixFournisseur !== undefined && a.utilises > 0 && (
+                    <div className="bg-emerald-50 rounded-xl p-4 border border-emerald-200">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-xs text-emerald-700 mb-1 font-medium">Bénéfice</p>
+                          <p className="text-xl font-bold text-emerald-600">
+                            {beneficeAbonnement.toLocaleString()} FCFA
+                          </p>
+                        </div>
+                        <TrendingUp size={20} className="text-emerald-600" />
+                      </div>
+                    </div>
+                  )}
+
                   {/* Email */}
-                  <div className="flex items-center space-x-2 text-sm text-gray-700 border p-3 rounded-xl bg-gray-50">
-                    <Mail size={16} className="text-gray-500" />
-                    <span className="truncate">{a.emailService}</span>
-                  </div>
+                  {a.emailService && (
+                    <div className="flex items-center space-x-2 text-sm text-gray-700 border p-3 rounded-xl bg-gray-50">
+                      <Mail size={16} className="text-gray-500" />
+                      <span className="truncate">{a.emailService}</span>
+                    </div>
+                  )}
 
                   {/* Alerte */}
                   {percent >= 90 && (
                     <div className="flex items-center space-x-2 text-red-600 bg-red-50 border border-red-200 p-3 rounded-xl">
                       <AlertTriangle size={16} />
-                      <span className="text-sm font-medium">Cet abonnement est presque plein !</span>
+                      <span className="text-sm font-medium">Abonnement plein !</span>
                     </div>
                   )}
                 </div>
 
-                {/* Footer - 🆕 MODIFIÉ */}
+                {/* Footer */}
                 <div className="px-5 pb-5 flex space-x-2">
                   <button
                     onClick={() => onGererProfils(a)}
@@ -203,7 +305,7 @@ const AbonnementsContent: FC<Props> = ({
                     <UserCog size={16} />
                     <span>Profils</span>
                   </button>
-                  
+
                   <button
                     onClick={() => supprimerItem("abonnement", a._id as string)}
                     disabled={loading}
@@ -218,23 +320,6 @@ const AbonnementsContent: FC<Props> = ({
           })}
         </div>
       )}
-
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: #f1f1f1;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #cbd5e1;
-          border-radius: 10px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #94a3b8;
-        }
-      `}</style>
     </div>
   );
 };
