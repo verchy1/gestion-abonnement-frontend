@@ -168,7 +168,7 @@ const UtilisateursContent = ({ utilisateurs, setShowModal, togglePaiement, suppr
                         ))}
                     </div>
                 </div>
-            )}
+            )} 
         </div>
     );
 };
