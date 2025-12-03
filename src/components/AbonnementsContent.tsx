@@ -10,29 +10,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 
-// Types simplifiés pour la démo
-interface Profil {
-  _id: string;
-  nom: string;
-}
-
-interface Abonnement {
-  _id: string;
-  service: string;
-  prix: number;
-  slots: number;
-  utilises: number;
-  proprio: string;
-  vendeurId?: string;
-  emailService?: string;
-  prixFournisseur?: number;
-  profils?: Profil[];
-  credentials?: {
-    email: string;
-    password: string;
-  };
-}
-
+import type { Abonnement } from "../types";
 interface Props {
   abonnements: Abonnement[];
   setShowModal: (value: string | null) => void;
