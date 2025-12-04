@@ -28,6 +28,7 @@ export interface Abonnement {
     email: string;
     password: string;
   };
+  actif: boolean;
 }
 
 export interface Utilisateur {

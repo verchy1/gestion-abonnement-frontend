@@ -8,6 +8,7 @@ import {
   AlertTriangle,
   UserCog,
   TrendingUp,
+  Edit
 } from "lucide-react";
 
 import type { Abonnement } from "../types";
@@ -18,6 +19,7 @@ interface Props {
   loading: boolean;
   isLoadingData: boolean;
   onGererProfils: (abonnement: Abonnement) => void;
+  onModifier: (abonnement: Abonnement) => void;
 }
 
 const AbonnementsContent: FC<Props> = ({
@@ -27,6 +29,7 @@ const AbonnementsContent: FC<Props> = ({
   loading,
   isLoadingData,
   onGererProfils,
+  onModifier
 }) => {
   if (isLoadingData) {
     return (
@@ -208,8 +211,8 @@ const AbonnementsContent: FC<Props> = ({
                     <h3 className="text-xl font-bold tracking-wide">{a.service}</h3>
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-bold border ${percent >= 90
-                          ? "bg-red-500/20 text-red-300 border-red-400/30"
-                          : "bg-emerald-500/20 text-emerald-300 border-emerald-400/30"
+                        ? "bg-red-500/20 text-red-300 border-red-400/30"
+                        : "bg-emerald-500/20 text-emerald-300 border-emerald-400/30"
                         }`}
                     >
                       {percent}%
@@ -282,6 +285,14 @@ const AbonnementsContent: FC<Props> = ({
                   >
                     <UserCog size={16} />
                     <span>Profils</span>
+                  </button>
+
+                  <button
+                    onClick={() => onModifier(a)}
+                    className="flex items-center justify-center flex-1 space-x-2 bg-blue-50 hover:bg-blue-100 text-blue-600 py-2.5 rounded-xl border border-blue-200 hover:border-blue-300 transition-all duration-200 font-medium"
+                  >
+                    <Edit size={16} />
+                    <span>Modifier</span>
                   </button>
 
                   <button

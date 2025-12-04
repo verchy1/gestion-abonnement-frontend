@@ -20,6 +20,7 @@ import FormulaireCarte from './components/FormulaireCarte';
 import FormulaireLiaisonCarte from './components/FormulaireLiaisonCarte';
 import MonProfile from './components/MonProfile';
 import ProfilsManager from './components/ProfilsManager';
+import FormulaireModificationAbonnement from './components/FormulaireModificationAbonnement';
 
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -48,6 +49,9 @@ const App = () => {
 
   // 🆕 NOUVEAU : État pour gérer le modal des profils
   const [selectedAbonnementForProfils, setSelectedAbonnementForProfils] = useState<Abonnement | null>(null);
+
+  // État pour gérer ll'abonnement sélectionné pour l'édition
+  const [selectedAbonnementForEdit, setSelectedAbonnementForEdit] = useState<Abonnement | null>(null);
 
   // Fonction pour rafraîchir les données
   const refreshData = async () => {
@@ -300,6 +304,37 @@ const App = () => {
       }
     } catch (error) {
       console.error('Erreur ajout abonnement:', error);
+      alert('Erreur de connexion au serveur');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Modifier un abonnement
+  const modifierAbonnement = async (id: string, data: Record<string, unknown>) => {
+    try {
+      setLoading(true);
+      console.log('📤 Données de modification envoyées:', data);
+
+      const response = await fetch(`${API_URL}/abonnements/${id}`, {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify(data)
+      });
+
+      if (response.ok) {
+        await chargerAbonnements();
+        await chargerStats();
+        setShowModal(null);
+        setSelectedAbonnementForEdit(null);
+        alert('Abonnement modifié avec succès !');
+      } else {
+        const errorData = await response.json();
+        console.error('❌ Erreur backend:', errorData);
+        alert(`Erreur: ${errorData.message || 'Erreur inconnue'}\nDétails: ${errorData.error || ''}`);
+      }
+    } catch (error) {
+      console.error('Erreur modification abonnement:', error);
       alert('Erreur de connexion au serveur');
     } finally {
       setLoading(false);
@@ -573,6 +608,10 @@ const App = () => {
               loading={loading}
               isLoadingData={isLoadingData}
               onGererProfils={(abonnement: Abonnement) => setSelectedAbonnementForProfils(abonnement)}
+              onModifier={(abonnement: Abonnement) => {
+                setSelectedAbonnementForEdit(abonnement);
+                setShowModal('modifier-abonnement');
+              }}
             />
           )}
 
@@ -695,6 +734,27 @@ const App = () => {
           }}
           token={token}
         />
+      )}
+
+      {showModal === 'modifier-abonnement' && selectedAbonnementForEdit && (
+        <Modal
+          title="Modifier l'Abonnement"
+          onClose={() => {
+            setShowModal(null);
+            setSelectedAbonnementForEdit(null);
+          }}
+        >
+          <FormulaireModificationAbonnement
+            abonnement={selectedAbonnementForEdit}
+            vendeurs={vendeurs}
+            loading={loading}
+            onSubmit={modifierAbonnement}
+            onCancel={() => {
+              setShowModal(null);
+              setSelectedAbonnementForEdit(null);
+            }}
+          />
+        </Modal>
       )}
     </div>
   );
