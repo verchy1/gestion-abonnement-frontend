@@ -8,6 +8,7 @@ import type { Abonnement, Admin, CartePrepayee } from './types';
 
 // Imports des composants
 import PageConnexion from './components/PageConnexion';
+import ClientApp from './components/ClientApp';
 import DashboardContent from './components/DashboardContent';
 import AbonnementsContent from './components/AbonnementsContent';
 import UtilisateursContent from './components/UtilisateursContent';
@@ -23,6 +24,9 @@ import ProfilsManager from './components/ProfilsManager';
 import FormulaireModificationAbonnement from './components/FormulaireModificationAbonnement';
 
 const App = () => {
+  // 🆕 État principal pour gérer le mode (client ou admin)
+  const [mode, setMode] = useState<'client' | 'admin-login' | 'admin-dashboard'>('client');
+  
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [token, setToken] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -44,16 +48,61 @@ const App = () => {
     commissionsTotal: 0,
     paiementsEnAttente: 0
   });
-  // État pour les données du profil
   const [adminProfile, setAdminProfile] = useState<Admin | null>(null);
-
-  // 🆕 NOUVEAU : État pour gérer le modal des profils
   const [selectedAbonnementForProfils, setSelectedAbonnementForProfils] = useState<Abonnement | null>(null);
-
-  // État pour gérer ll'abonnement sélectionné pour l'édition
   const [selectedAbonnementForEdit, setSelectedAbonnementForEdit] = useState<Abonnement | null>(null);
 
-  // Fonction pour rafraîchir les données
+  // Vérifier si l'utilisateur est déjà connecté en tant qu'admin
+  useEffect(() => {
+    const savedToken = localStorage.getItem('token');
+    if (savedToken) {
+      setToken(savedToken);
+      setIsLoggedIn(true);
+      setMode('admin-dashboard');
+    }
+  }, []);
+
+  // Charger les données admin
+  useEffect(() => {
+    if (isLoggedIn && token && mode === 'admin-dashboard') {
+      const loadData = async () => {
+        try {
+          setIsLoadingData(true);
+          const headers = {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          };
+          const [abonRes, utilRes, vendRes, statsRes, cartesRes, profileRes] = await Promise.all([
+            fetch(`${API_URL}/abonnements`, { headers }),
+            fetch(`${API_URL}/utilisateurs`, { headers }),
+            fetch(`${API_URL}/vendeurs`, { headers }),
+            fetch(`${API_URL}/stats`, { headers }),
+            fetch(`${API_URL}/cartes`, { headers }),
+            fetch(`${API_URL}/admin/profile`, { headers })
+          ]);
+
+          if (abonRes.ok) setAbonnements(await abonRes.json());
+          if (utilRes.ok) setUtilisateurs(await utilRes.json());
+          if (vendRes.ok) setVendeurs(await vendRes.json());
+          if (statsRes.ok) setStats(await statsRes.json());
+          if (cartesRes && cartesRes.ok) setCartes(await cartesRes.json());
+          if (profileRes && profileRes.ok) setAdminProfile(await profileRes.json());
+        } catch (error) {
+          console.error('Erreur chargement données:', error);
+        } finally {
+          setIsLoadingData(false);
+        }
+      };
+      loadData();
+    }
+  }, [isLoggedIn, token, mode]);
+
+  // Headers pour les requêtes API
+  const getHeaders = () => ({
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${token}`
+  });
+
   const refreshData = async () => {
     if (!token) return;
     setIsLoadingData(true);
@@ -83,11 +132,8 @@ const App = () => {
         return;
       }
 
-      // Récupérer le PDF sous forme de blob
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-
-      // Télécharger automatiquement
       const a = document.createElement("a");
       a.href = url;
       a.download = `recu_${userId}.pdf`;
@@ -98,59 +144,6 @@ const App = () => {
     }
   };
 
-
-
-  // Vérifier si l'utilisateur est déjà connecté
-  useEffect(() => {
-    const savedToken = localStorage.getItem('token');
-    if (savedToken) {
-      setToken(savedToken);
-      setIsLoggedIn(true);
-    }
-  }, []);
-
-  // Charger les données quand l'utilisateur est connecté
-  useEffect(() => {
-    if (isLoggedIn && token) {
-      const loadData = async () => {
-        try {
-          setIsLoadingData(true);
-          const headers = {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          };
-          const [abonRes, utilRes, vendRes, statsRes, cartesRes, profileRes] = await Promise.all([
-            fetch(`${API_URL}/abonnements`, { headers }),
-            fetch(`${API_URL}/utilisateurs`, { headers }),
-            fetch(`${API_URL}/vendeurs`, { headers }),
-            fetch(`${API_URL}/stats`, { headers }),
-            fetch(`${API_URL}/cartes`, { headers }),
-            fetch(`${API_URL}/admin/profile`, { headers })
-          ]);
-
-          if (abonRes.ok) setAbonnements(await abonRes.json());
-          if (utilRes.ok) setUtilisateurs(await utilRes.json());
-          if (vendRes.ok) setVendeurs(await vendRes.json());
-          if (statsRes.ok) setStats(await statsRes.json());
-          if (cartesRes && cartesRes.ok) setCartes(await cartesRes.json());
-          if (profileRes && profileRes.ok) setAdminProfile(await profileRes.json()); // NOUVEAU
-        } catch (error) {
-          console.error('Erreur chargement données:', error);
-        } finally {
-          setIsLoadingData(false);
-        }
-      };
-      loadData();
-    }
-  }, [isLoggedIn, token]);
-
-  // Headers pour les requêtes API
-  const getHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`
-  });
-
-  // Charger le profil de l'admin
   const chargerProfil = async () => {
     try {
       const response = await fetch(`${API_URL}/admin/profile`, {
@@ -166,7 +159,6 @@ const App = () => {
     }
   };
 
-  // Mettre à jour le profil
   const mettreAJourProfil = async (data: { nom: string; email: string; telephone?: string }) => {
     try {
       setLoading(true);
@@ -195,7 +187,6 @@ const App = () => {
     }
   };
 
-  // Changer le mot de passe
   const changerMotDePasse = async (data: { ancienMotDePasse: string; nouveauMotDePasse: string }) => {
     try {
       setLoading(true);
@@ -222,7 +213,6 @@ const App = () => {
     }
   };
 
-  // Charger les abonnements
   const chargerAbonnements = async () => {
     try {
       const response = await fetch(`${API_URL}/abonnements`, {
@@ -237,7 +227,6 @@ const App = () => {
     }
   };
 
-  // Charger les utilisateurs
   const chargerUtilisateurs = async () => {
     try {
       const response = await fetch(`${API_URL}/utilisateurs`, {
@@ -252,7 +241,6 @@ const App = () => {
     }
   };
 
-  // Charger les statistiques
   const chargerStats = async () => {
     try {
       const response = await fetch(`${API_URL}/stats`, {
@@ -267,7 +255,6 @@ const App = () => {
     }
   };
 
-  // Charger les cartes prépayées
   const chargerCartes = async () => {
     try {
       const response = await fetch(`${API_URL}/cartes`, { headers: getHeaders() });
@@ -280,12 +267,9 @@ const App = () => {
     }
   };
 
-  // Ajouter un abonnement
   const ajouterAbonnement = async (data: Record<string, unknown>) => {
     try {
       setLoading(true);
-      console.log('📤 Données envoyées:', data); // DEBUG
-
       const response = await fetch(`${API_URL}/abonnements`, {
         method: 'POST',
         headers: getHeaders(),
@@ -299,8 +283,7 @@ const App = () => {
         alert('Abonnement ajouté avec succès !');
       } else {
         const errorData = await response.json();
-        console.error('❌ Erreur backend:', errorData); // DEBUG
-        alert(`Erreur: ${errorData.message || 'Erreur inconnue'}\nDétails: ${errorData.error || ''}`);
+        alert(`Erreur: ${errorData.message || 'Erreur inconnue'}`);
       }
     } catch (error) {
       console.error('Erreur ajout abonnement:', error);
@@ -310,12 +293,9 @@ const App = () => {
     }
   };
 
-  // Modifier un abonnement
   const modifierAbonnement = async (id: string, data: Record<string, unknown>) => {
     try {
       setLoading(true);
-      console.log('📤 Données de modification envoyées:', data);
-
       const response = await fetch(`${API_URL}/abonnements/${id}`, {
         method: 'PUT',
         headers: getHeaders(),
@@ -330,8 +310,7 @@ const App = () => {
         alert('Abonnement modifié avec succès !');
       } else {
         const errorData = await response.json();
-        console.error('❌ Erreur backend:', errorData);
-        alert(`Erreur: ${errorData.message || 'Erreur inconnue'}\nDétails: ${errorData.error || ''}`);
+        alert(`Erreur: ${errorData.message || 'Erreur inconnue'}`);
       }
     } catch (error) {
       console.error('Erreur modification abonnement:', error);
@@ -341,7 +320,6 @@ const App = () => {
     }
   };
 
-  // Ajouter un utilisateur
   const ajouterUtilisateur = async (data: Record<string, unknown>) => {
     try {
       setLoading(true);
@@ -368,7 +346,6 @@ const App = () => {
     }
   };
 
-  // Toggle paiement utilisateur
   const togglePaiement = async (id: string, payeActuel: boolean) => {
     try {
       const response = await fetch(`${API_URL}/utilisateurs/${id}/paiement`, {
@@ -386,7 +363,6 @@ const App = () => {
     }
   };
 
-  // Supprimer un item
   const supprimerItem = async (type: string, id: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cet élément ?')) return;
 
@@ -414,7 +390,6 @@ const App = () => {
     }
   };
 
-  // Supprimer une carte prépayée
   const supprimerCarte = async (id: string) => {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette carte ?')) return;
     try {
@@ -433,7 +408,6 @@ const App = () => {
     }
   };
 
-  // 🆕 NOUVELLE FONCTION : Modifier le solde d'une carte
   const modifierSoldeCarte = async (id: string, nouveauSolde: number) => {
     try {
       setLoading(true);
@@ -458,7 +432,6 @@ const App = () => {
     }
   };
 
-  // 🆕 NOUVELLE FONCTION : Supprimer un abonnement d'une carte
   const supprimerAbonnementCarte = async (carteId: string, abonnementIndex: number) => {
     try {
       setLoading(true);
@@ -482,7 +455,6 @@ const App = () => {
     }
   };
 
-  // Déconnexion
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('admin');
@@ -491,26 +463,45 @@ const App = () => {
     setAbonnements([]);
     setUtilisateurs([]);
     setVendeurs([]);
+    setMode('client'); // 🆕 Retour au mode client
   };
 
-  // Formater les dates
   const formatDate = (date: string) => {
     if (!date) return '';
     return new Date(date).toLocaleDateString('fr-FR');
   };
 
-  // Si pas connecté, afficher la page de connexion
-  if (!isLoggedIn) {
-    return <PageConnexion setIsLoggedIn={setIsLoggedIn} setToken={setToken} />;
+  // 🆕 Gestion de la connexion admin réussie
+  const handleAdminLoginSuccess = (newToken: string | null) => {
+    setToken(newToken);
+    setIsLoggedIn(true);
+    setMode('admin-dashboard');
+  };
+
+  // 🆕 RENDU CONDITIONNEL SELON LE MODE
+  
+  // MODE CLIENT - Afficher ClientApp
+  if (mode === 'client') {
+    return <ClientApp onSwitchToAdmin={() => setMode('admin-login')} />;
   }
 
+  // MODE ADMIN LOGIN - Afficher PageConnexion
+  if (mode === 'admin-login') {
+    return (
+      <PageConnexion 
+        setIsLoggedIn={setIsLoggedIn} 
+        setToken={handleAdminLoginSuccess}
+        onBackToClient={() => setMode('client')}
+      />
+    );
+  }
+
+  // MODE ADMIN DASHBOARD - Afficher le dashboard admin
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* HEADER PREMIUM */}
       <header className="bg-indigo-600 shadow-lg">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-
-          {/* Logo */}
           <div className="flex items-center space-x-3">
             <div className="bg-white p-2 rounded-xl shadow-md">
               <img src="/subsManager logo.svg" alt="SubsManager Logo" width={30} height={30} />
@@ -518,7 +509,6 @@ const App = () => {
             <h1 className="text-white text-2xl font-bold tracking-wide">SubsManager</h1>
           </div>
 
-          {/* Actions desktop */}
           <div className="hidden md:flex items-center space-x-3">
             <button
               onClick={refreshData}
@@ -537,17 +527,14 @@ const App = () => {
             </button>
           </div>
 
-          {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="md:hidden text-white"
           >
             {mobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
           </button>
-
         </div>
 
-        {/* Mobile dropdown */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-indigo-700 text-white py-3 px-4 space-y-3">
             <button onClick={refreshData} className="w-full bg-indigo-500 py-2 rounded-lg">Rafraîchir</button>
@@ -556,10 +543,9 @@ const App = () => {
         )}
       </header>
 
-      {/* NAVIGATION MODERNE AVEC GLASSMORPHISM */}
+      {/* NAVIGATION */}
       <nav className="bg-white shadow-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 py-3 flex overflow-x-auto space-x-2 scrollbar-hide">
-
           {[
             { id: 'dashboard', label: 'Tableau de bord', icon: TrendingUp },
             { id: 'abonnements', label: 'Abonnements', icon: DollarSign },
@@ -571,35 +557,25 @@ const App = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center space-x-2 px-4 py-2 rounded-xl border transition-all
-          ${activeTab === tab.id
+              className={`flex items-center space-x-2 px-4 py-2 rounded-xl border transition-all ${
+                activeTab === tab.id
                   ? 'bg-indigo-600 text-white border-indigo-600'
                   : 'bg-white text-indigo-600 border-indigo-300 hover:bg-indigo-50'
-                }
-        `}
+              }`}
             >
               <tab.icon size={18} />
               <span className="font-medium whitespace-nowrap">{tab.label}</span>
             </button>
           ))}
-
         </div>
       </nav>
 
-
-      {/* CONTENU PRINCIPAL AVEC ANIMATIONS */}
+      {/* CONTENU PRINCIPAL */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="animate-in fade-in slide-in-from-bottom duration-500">
-          {/* DASHBOARD */}
           {activeTab === 'dashboard' && (
-            <DashboardContent
-              stats={stats}
-              abonnements={abonnements}
-              isLoadingData={isLoadingData}
-            />
+            <DashboardContent stats={stats} abonnements={abonnements} isLoadingData={isLoadingData} />
           )}
-
-          {/* ABONNEMENTS */}
           {activeTab === 'abonnements' && (
             <AbonnementsContent
               abonnements={abonnements}
@@ -614,8 +590,6 @@ const App = () => {
               }}
             />
           )}
-
-          {/* UTILISATEURS */}
           {activeTab === 'utilisateurs' && (
             <UtilisateursContent
               utilisateurs={utilisateurs}
@@ -625,16 +599,10 @@ const App = () => {
               loading={loading}
               isLoadingData={isLoadingData}
               formatDate={formatDate}
-              genererRecu={genererRecu}   // 🆕
+              genererRecu={genererRecu}
             />
           )}
-
-          {/* VENDEURS */}
-          {activeTab === 'vendeurs' && (
-            <VendeursContent vendeurs={vendeurs} />
-          )}
-
-          {/* CARTES PRÉPAYÉES - 🆕 AVEC LES NOUVELLES PROPS */}
+          {activeTab === 'vendeurs' && <VendeursContent vendeurs={vendeurs} />}
           {activeTab === 'cartes' && (
             <CartesContent
               cartes={cartes}
@@ -646,8 +614,6 @@ const App = () => {
               onLinkClick={(id: string) => { setSelectedCardForLink(id); setShowModal('link'); }}
             />
           )}
-
-          {/* MON PROFIL */}
           {activeTab === 'profile' && (
             <MonProfile
               adminProfile={adminProfile}
@@ -662,20 +628,12 @@ const App = () => {
       {/* MODALS */}
       {showModal === 'abonnement' && (
         <Modal title="Ajouter un Abonnement" onClose={() => setShowModal(null)}>
-          <FormulaireAbonnement
-            ajouterAbonnement={ajouterAbonnement}
-            vendeurs={vendeurs}
-            loading={loading}
-          />
+          <FormulaireAbonnement ajouterAbonnement={ajouterAbonnement} vendeurs={vendeurs} loading={loading} />
         </Modal>
       )}
       {showModal === 'utilisateur' && (
         <Modal title="Ajouter un Utilisateur" onClose={() => setShowModal(null)}>
-          <FormulaireUtilisateur
-            ajouterUtilisateur={ajouterUtilisateur}
-            abonnements={abonnements}
-            loading={loading}
-          />
+          <FormulaireUtilisateur ajouterUtilisateur={ajouterUtilisateur} abonnements={abonnements} loading={loading} />
         </Modal>
       )}
       {showModal === 'carte' && (
@@ -717,8 +675,6 @@ const App = () => {
           />
         </Modal>
       )}
-
-      {/* 🆕 NOUVEAU : Modal du gestionnaire de profils */}
       {selectedAbonnementForProfils && token && (
         <ProfilsManager
           utilisateurs={utilisateurs}
@@ -726,7 +682,6 @@ const App = () => {
           onClose={() => setSelectedAbonnementForProfils(null)}
           onUpdate={async () => {
             await chargerAbonnements();
-            // Mettre à jour l'abonnement sélectionné avec les nouvelles données
             const updatedAbo = abonnements.find(a => a === selectedAbonnementForProfils._id);
             if (updatedAbo) {
               setSelectedAbonnementForProfils(updatedAbo as Abonnement);
@@ -735,7 +690,6 @@ const App = () => {
           token={token}
         />
       )}
-
       {showModal === 'modifier-abonnement' && selectedAbonnementForEdit && (
         <Modal
           title="Modifier l'Abonnement"

@@ -1,8 +1,16 @@
 import { useState } from 'react';
-import { DollarSign, AlertCircle } from 'lucide-react';
+import { DollarSign, AlertCircle, ArrowLeft } from 'lucide-react';
 import { API_URL } from '../types';
 
-const PageConnexion = ({ setIsLoggedIn, setToken }: { setIsLoggedIn: (v: boolean) => void; setToken: (v: string | null) => void }) => {
+const PageConnexion = ({
+  setIsLoggedIn,
+  setToken, 
+  onBackToClient
+}: {
+  setIsLoggedIn: (v: boolean) => void;
+  setToken: (v: string | null) => void;
+  onBackToClient: () => void;
+}) => {
   const [identifiant, setIdentifiant] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
   const [erreur, setErreur] = useState('');
@@ -45,6 +53,13 @@ const PageConnexion = ({ setIsLoggedIn, setToken }: { setIsLoggedIn: (v: boolean
   return (
     <div className="min-h-screen w-full bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden text-gray-900">
+        <button
+          onClick={onBackToClient}
+          className="absolute top-4 left-4 flex items-center space-x-2 text-white hover:text-gray-300 font-semibold"
+        >
+          <ArrowLeft size={20} />
+          <span>Retour</span>
+        </button>
         <div className="bg-linear-to-r from-indigo-600 to-purple-600 p-8 text-center">
           <div className="bg-white w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
             <DollarSign className="text-indigo-600" size={40} />
@@ -76,7 +91,7 @@ const PageConnexion = ({ setIsLoggedIn, setToken }: { setIsLoggedIn: (v: boolean
           </div>
 
           <div className="mt-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
-            <p className="text-xs text-blue-800 text-center">💡 <strong>Serveur:</strong> Assurez-vous que le backend est actif sur le port 5000</p>
+            <p className="text-xs text-blue-800 text-center">💡 <strong>NB:</strong> Assurez-vous que le Subs vous a gerer vos informations de connexion</p>
           </div>
         </div>
       </div>
