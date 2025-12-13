@@ -14,6 +14,19 @@ interface ClientAppProps {
   onSwitchToAdmin: () => void;
 }
 
+interface PaymentResponse {
+  success: boolean;
+  message: string;
+  paymentId?: string;
+  payment_url?: string;
+}
+
+interface PaymentVerificationResponse {
+  success: boolean;
+  message: string;
+  details?: Record<string, unknown>;
+}
+
 export const ClientApp = ({ onSwitchToAdmin }: ClientAppProps) => {
   const [abonnements, setAbonnements] = useState<Abonnement[]>([]);
   const [selectedAbo, setSelectedAbo] = useState<Abonnement | null>(null);
@@ -23,10 +36,11 @@ export const ClientApp = ({ onSwitchToAdmin }: ClientAppProps) => {
     nom: '',
     telephone: '',
     email: '',
-    methodePaiement: 'Mobile Money'
+    methodePaiement: 'MTN MONEY'
   });
   const [error, setError] = useState('');
   const [numeroCommande, setNumeroCommande] = useState('');
+  const [pollingInterval, setPollingInterval] = useState<number | null>(null);
 
   useEffect(() => {
     if (step === 'browse') {
@@ -38,12 +52,10 @@ export const ClientApp = ({ onSwitchToAdmin }: ClientAppProps) => {
             const data = await response.json();
             setAbonnements(data);
           } else {
-            // Fallback to mock data if API fails
             setAbonnements(MOCK_ABONNEMENTS.filter(a => a.actif));
           }
         } catch (error) {
           console.log('Erreur chargement abonnements:', error);
-          // Fallback to mock data if API fails
           setAbonnements(MOCK_ABONNEMENTS.filter(a => a.actif));
         }
         setLoading(false);
@@ -52,6 +64,14 @@ export const ClientApp = ({ onSwitchToAdmin }: ClientAppProps) => {
     }
   }, [step]);
 
+  // Nettoyer l'intervalle de polling lors du démontage
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
 
   const handleOnboardingComplete = () => {
     sessionStorage.setItem("onboardingSeen", "true");
@@ -78,21 +98,127 @@ export const ClientApp = ({ onSwitchToAdmin }: ClientAppProps) => {
       return;
     }
 
-    setLoading(true);
-    setError('');
-    await new Promise(resolve => setTimeout(resolve, 1200));
     const randomId = Math.random().toString(36).substring(2, 10).toUpperCase();
     setNumeroCommande(`SM${randomId}`);
-    setLoading(false);
     setStep('payment');
   };
 
-  const handleConfirmPayment = async () => {
+  // Fonction pour initier le paiement via Monetbil
+  const initiatePayment = async () => {
+    if (!selectedAbo) return;
+
     setLoading(true);
     setError('');
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setLoading(false);
-    setStep('success');
+
+    try {
+      const response = await fetch(`${API_URL}/paiements/achat-abonnement`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount: selectedAbo.prix,
+          methodPay: formData.methodePaiement,
+          phone: formData.telephone
+        })
+      });
+
+      const data: PaymentResponse = await response.json();
+
+      if (data.success && data.paymentId) {
+        startPaymentVerification(data.paymentId);
+      } else {
+        setError(data.message || 'Erreur lors de l\'initiation du paiement');
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Erreur paiement:', error);
+      setError('Erreur de connexion au service de paiement');
+      setLoading(false);
+    }
+  };
+
+  // Fonction pour vérifier le statut du paiement (polling)
+  const startPaymentVerification = (paymentIdToCheck: string) => {
+    let attemptCount = 0;
+    const maxAttempts = 60; // 5 minutes (60 * 5 secondes)
+
+    const interval = setInterval(async () => {
+      attemptCount++;
+
+      try {
+        const response = await fetch(`${API_URL}/paiements/verifier-paiement`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            paymentId: paymentIdToCheck,
+            amount: selectedAbo?.prix
+          })
+        });
+
+        const data: PaymentVerificationResponse = await response.json();
+
+        if (data.success) {
+          // Paiement réussi
+          clearInterval(interval);
+          setPollingInterval(null);
+          await createUser();
+        } else if (attemptCount >= maxAttempts) {
+          // Timeout après 5 minutes
+          clearInterval(interval);
+          setPollingInterval(null);
+          setLoading(false);
+          setError('Délai de paiement expiré. Veuillez réessayer.');
+        }
+      } catch (error) {
+        console.error('Erreur vérification:', error);
+        if (attemptCount >= maxAttempts) {
+          clearInterval(interval);
+          setPollingInterval(null);
+          setLoading(false);
+          setError('Erreur lors de la vérification du paiement');
+        }
+      }
+    }, 5000); // Vérifier toutes les 5 secondes
+
+    setPollingInterval(interval);
+  };
+
+  // Fonction pour créer l'utilisateur après paiement réussi
+  const createUser = async () => {
+    if (!selectedAbo) return;
+
+    try {
+      const response = await fetch(`${API_URL}/utilisateurs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          // Ajouter le token si nécessaire
+          // 'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          nom: formData.nom,
+          telephone: formData.telephone,
+          email: formData.email,
+          abonnementId: selectedAbo._id
+        })
+      });
+
+      if (response.ok) {
+        setLoading(false);
+        setStep('success');
+      } else {
+        const errorData = await response.json();
+        setLoading(false);
+        setError(errorData.message || 'Erreur lors de la création du compte');
+      }
+    } catch (error) {
+      console.error('Erreur création utilisateur:', error);
+      setLoading(false);
+      setError('Erreur lors de la création du compte');
+    }
   };
 
   if (step === 'onboarding') {
@@ -204,9 +330,8 @@ export const ClientApp = ({ onSwitchToAdmin }: ClientAppProps) => {
                       value={formData.methodePaiement}
                       onChange={(e) => setFormData({ ...formData, methodePaiement: e.target.value })}
                     >
-                      <option value="Mobile Money">📱 Mobile Money (Airtel / MTN)</option>
-                      <option value="Cash">💵 Paiement en espèces</option>
-                      <option value="Virement">🏦 Virement bancaire</option>
+                      <option value="MTN MONEY">📱 MTN Mobile Money</option>
+                      <option value="AIRTEL MONEY">📱 Airtel Money</option>
                     </select>
                   </div>
                 </div>
@@ -231,7 +356,7 @@ export const ClientApp = ({ onSwitchToAdmin }: ClientAppProps) => {
           </div>
         )}
 
-        {/* Payment Step - Partie 1/2 */}
+        {/* Payment Step */}
         {step === 'payment' && selectedAbo && (
           <div className="max-w-3xl mx-auto">
             <div className="bg-white rounded-2xl shadow-xl overflow-hidden">
@@ -356,7 +481,7 @@ export const ClientApp = ({ onSwitchToAdmin }: ClientAppProps) => {
                         Retour
                       </button>
                       <button
-                        onClick={handleConfirmPayment}
+                        onClick={initiatePayment}
                         className="flex-1 bg-linear-to-r from-emerald-600 to-teal-600 text-white py-3 sm:py-4 rounded-xl font-bold hover:from-emerald-700 hover:to-teal-700 transition-all shadow-lg hover:shadow-xl flex items-center justify-center space-x-2 text-sm sm:text-base"
                       >
                         <CheckCircle size={18} />
