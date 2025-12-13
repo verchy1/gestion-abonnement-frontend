@@ -61,7 +61,7 @@ const FormulaireUtilisateur = ({ ajouterUtilisateur, abonnements, loading }: { a
           <option value="">Choisir un service</option>
           {abonnements.map(a => (
             <option key={a._id} value={a._id}>
-              {a.service} ({a.utilises}/{a.slots} places)
+              {a.service} - {a.emailService} ({a.utilises}/{a.slots} places)
             </option>
           ))}
         </select>

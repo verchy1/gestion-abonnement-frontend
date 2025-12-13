@@ -76,5 +76,29 @@ export interface Admin {
   dateCreation: string;
 }
 
+//client 
+
+export interface FormData {
+  nom: string;
+  telephone: string;
+  email: string;
+  methodePaiement: string;
+}
+
+export type Step = 'onboarding' | 'browse' | 'form' | 'payment' | 'success';
+
+export interface OnboardingSlide {
+  icon: React.ComponentType<{ size?: number; color?: string }>;
+  title: string;
+  description: string;
+  color: string;
+}
+
+export interface ProgressStep {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ size?: number }>;
+}
+
 // export const API_URL = 'http://localhost:5000/api';
 export const API_URL = 'https://gestion-abonnement-backend.onrender.com/api';

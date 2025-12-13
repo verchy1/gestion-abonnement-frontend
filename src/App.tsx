@@ -8,7 +8,7 @@ import type { Abonnement, Admin, CartePrepayee } from './types';
 
 // Imports des composants
 import PageConnexion from './components/PageConnexion';
-import ClientApp from './components/ClientApp';
+import ClientApp from './components/client/ClientApp';
 import DashboardContent from './components/DashboardContent';
 import AbonnementsContent from './components/AbonnementsContent';
 import UtilisateursContent from './components/UtilisateursContent';

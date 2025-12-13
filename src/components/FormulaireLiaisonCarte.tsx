@@ -9,12 +9,13 @@ const FormulaireLiaisonCarte = ({ cardId, abonnements, loading, onSuccess }: { c
     const [dateFin, setDateFin] = useState<string>(() => {
         const d = new Date();
         d.setDate(d.getDate() + 30);
-        return d.toISOString().split('T')[0];
+        return d.toISOString().split('T')[0]; 
     });
 
     const selectedAbonnement = abonnements.find(a => a._id === abonnementId);
 
     const handleSubmit = async () => {
+        
         if (!cardId) return;
         if (!abonnementId) return alert('Choisissez un abonnement');
 
@@ -92,7 +93,7 @@ const FormulaireLiaisonCarte = ({ cardId, abonnements, loading, onSuccess }: { c
 
 
             <button onClick={handleSubmit} disabled={loading} className="w-full bg-linear-to-r from-indigo-600 to-purple-600 text-white py-3 rounded-xl font-semibold">
-                Lier la carte
+                {loading ? 'En cours...' : '✓ Lier la carte'}
             </button>
         </div>
     );
